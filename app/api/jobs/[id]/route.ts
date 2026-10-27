@@ -1,0 +1,32 @@
+import { NextResponse } from "next/server";
+import { getDb } from "@/lib/db";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+export async function GET(_request: Request, context: { params: Promise<{ id: string }> }) {
+  if (!process.env.DATABASE_URL) {
+    return NextResponse.json({ error: "Opportunity search is not configured yet." }, { status: 503 });
+  }
+  const { id } = await context.params;
+  const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  if (!uuidPattern.test(id)) return NextResponse.json({ error: "Opportunity not found." }, { status: 404 });
+  try {
+    const sql = getDb();
+    const rows = await sql.query(
+      `SELECT id, title, company_name AS company, description, requirements, category,
+              listing_type, work_arrangement, location, salary_min, salary_max,
+              salary_currency, salary_period, application_url, published_at
+       FROM jobs
+       WHERE id = $1::uuid
+         AND status = 'published'
+         AND (expires_at IS NULL OR expires_at > now())
+       LIMIT 1`,
+      [id]
+    );
+    if (!rows.length) return NextResponse.json({ error: "Opportunity not found." }, { status: 404 });
+    return NextResponse.json({ job: rows[0] });
+  } catch {
+    return NextResponse.json({ error: "Unable to load this opportunity right now." }, { status: 503 });
+  }
+}

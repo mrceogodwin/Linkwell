@@ -65,4 +65,4 @@ Draft → submitted for review → approved/published OR rejected with reason �
 - Test production build, authentication, permissions, moderation, uploads, billing and mobile flows before calling the platform launch-ready.
 
 ## Current status (2026-10-27)
-The GitHub repository was verified to contain only its initial README at the start of this work. A local 16-file visual foundation exists, but no deployment or production build was verified. Database, authentication, storage, moderation, applications and billing are not yet verified as implemented. The Vercel project has no deployments, so there is no confirmed live production URL yet.
+The repository initially contained only a README. Since then, the public-site foundation, a Neon schema file, a database-backed approved-jobs API, a health endpoint, and an initial CI workflow have been committed. The schema has not been applied to a real database, DATABASE_URL is not configured, authentication/storage/moderation write actions/applications/billing are not implemented, and the production build has not been verified. Vercel still reports zero deployments, so there is no confirmed live production URL.

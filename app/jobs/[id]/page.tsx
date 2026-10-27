@@ -42,8 +42,10 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 export default async function JobDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   let job: Job | null = null;
-  try { job = await loadJob(id); } catch { /* The board remains available if the database is temporarily down. */ }
-  if (!job) notFound();
+  let databaseUnavailable = false;
+  try { job = await loadJob(id); } catch { databaseUnavailable = true; }
+  if (!job && !databaseUnavailable) notFound();
+  if (!job) return <main className="subpage"><header className="nav wrap"><a className="brand" href="/"><span className="brand-mark"><i/><i/><i/><i/></span><span>linkwell</span></a></header><section className="wrap jobs-results"><div className="empty-state"><div className="eyebrow">TEMPORARILY UNAVAILABLE</div><h3>We couldn’t load this opportunity.</h3><p>The listing service is temporarily unavailable. Please try again shortly or return to the opportunity board.</p><div className="empty-actions"><a className="button button-dark" href="/jobs">Back to opportunities <ArrowRight size={16}/></a></div></div></section></main>;
   const salary = job.salary_min != null || job.salary_max != null
     ? [job.salary_currency, job.salary_min ?? "—", job.salary_max != null ? "–" + job.salary_max : ""].filter(Boolean).join(" ") + (job.salary_period ? " / " + job.salary_period : "")
     : null;

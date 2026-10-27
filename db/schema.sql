@@ -88,7 +88,7 @@ CREATE TABLE IF NOT EXISTS jobs (
   CHECK (salary_min IS NULL OR salary_min >= 0),
   CHECK (salary_max IS NULL OR salary_max >= 0),
   CHECK (salary_min IS NULL OR salary_max IS NULL OR salary_max >= salary_min),
-  CHECK (status <> 'published' OR published_at IS NOT NULL)
+  CHECK (status <> 'published' OR (published_at IS NOT NULL AND reviewed_at IS NOT NULL AND reviewed_by IS NOT NULL))
 );
 CREATE INDEX IF NOT EXISTS jobs_public_search_idx ON jobs (status, published_at DESC);
 CREATE INDEX IF NOT EXISTS jobs_type_idx ON jobs (listing_type, work_arrangement, status);
@@ -155,3 +155,49 @@ CREATE INDEX IF NOT EXISTS admin_audit_logs_created_idx ON admin_audit_logs (cre
 
 -- Application authorization is enforced by server-side application code and verified auth claims.
 -- Never expose this database using an unrestricted client-side connection string.
+
+-- Database-level guardrails: published listings must have review metadata.
+-- Editing a live listing's material content automatically returns it to review.
+CREATE OR REPLACE FUNCTION linkwell_guard_job_publication()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  IF TG_OP = 'UPDATE'
+     AND OLD.status = 'published'
+     AND (
+       NEW.title IS DISTINCT FROM OLD.title OR
+       NEW.company_name IS DISTINCT FROM OLD.company_name OR
+       NEW.description IS DISTINCT FROM OLD.description OR
+       NEW.requirements IS DISTINCT FROM OLD.requirements OR
+       NEW.category IS DISTINCT FROM OLD.category OR
+       NEW.listing_type IS DISTINCT FROM OLD.listing_type OR
+       NEW.work_arrangement IS DISTINCT FROM OLD.work_arrangement OR
+       NEW.location IS DISTINCT FROM OLD.location OR
+       NEW.salary_min IS DISTINCT FROM OLD.salary_min OR
+       NEW.salary_max IS DISTINCT FROM OLD.salary_max OR
+       NEW.salary_currency IS DISTINCT FROM OLD.salary_currency OR
+       NEW.salary_period IS DISTINCT FROM OLD.salary_period OR
+       NEW.application_url IS DISTINCT FROM OLD.application_url
+     ) THEN
+    NEW.status := 'pending_review';
+    NEW.submitted_at := now();
+    NEW.reviewed_by := NULL;
+    NEW.reviewed_at := NULL;
+    NEW.review_reason := NULL;
+    NEW.published_at := NULL;
+  END IF;
+
+  IF NEW.status = 'published' AND (
+    NEW.reviewed_at IS NULL OR NEW.reviewed_by IS NULL OR NEW.published_at IS NULL
+  ) THEN
+    RAISE EXCEPTION 'A listing must be reviewed before publication';
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS jobs_guard_publication ON jobs;
+CREATE TRIGGER jobs_guard_publication
+BEFORE INSERT OR UPDATE ON jobs
+FOR EACH ROW EXECUTE FUNCTION linkwell_guard_job_publication();

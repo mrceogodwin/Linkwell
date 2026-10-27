@@ -57,7 +57,7 @@ export default function EmployerJobForm() {
     } finally { setSaving(false); }
   }
 
-  const pretty = (value: string) => value.replaceAll("_", " ").replace(/\\b\\w/g, c => c.toUpperCase());
+  const pretty = (value: string) => value.replaceAll("_", " ").replace(/\b\w/g, c => c.toUpperCase());
 
   return <div className="employer-workspace">
     <section className="employer-panel">

@@ -1,0 +1,7 @@
+import type { Metadata } from "next";
+import { ArrowLeft, ShieldCheck } from "lucide-react";
+export const metadata: Metadata = { title: "Create an account" };
+export default async function SignUpPage({ searchParams }: { searchParams: Promise<{ role?: string }> }) {
+ const { role } = await searchParams;
+ return <main className="subpage"><header className="nav wrap"><a className="brand" href="/"><span className="brand-mark"><i/><i/><i/><i/></span><span>linkwell</span></a></header><section className="empty-state auth-preview"><div className="empty-icon"><ShieldCheck size={26}/></div><div className="eyebrow" style={{justifyContent:"center"}}>LINKWELL ACCOUNT</div><h3>Make your next move.</h3><p>{role === "employer" ? "Employer registration is planned for teams that want to publish and manage opportunities." : "Talent accounts will let professionals create profiles, save opportunities and manage applications."} Secure authentication, email verification, role permissions and persistent storage are not connected yet, so account creation is not open.</p><div className="empty-actions"><a className="button button-dark" href="/">Return to homepage <ArrowLeft size={15}/></a></div><small>No credentials are collected on this page.</small></section></main>;
+}

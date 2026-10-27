@@ -10,9 +10,9 @@ See [docs/PRD.md](docs/PRD.md) for the product scope, roles, listing approval li
 
 ## Current implementation status
 
-The repository now contains a Next.js App Router + TypeScript public-site foundation, responsive brand styling, public landing and informational pages, opportunity search-form UI, account-route placeholders that do not collect credentials, and a CI workflow intended to run TypeScript and production-build checks.
+The repository contains a Next.js App Router + TypeScript public-site foundation, responsive brand styling, informational pages, a database-backed approved-opportunities API, a health endpoint, a Neon schema migration, environment-variable template, and a CI workflow intended to run TypeScript and production-build checks.
 
-**This is not yet a functioning marketplace.** No live vacancies are connected; signup/sign-in are not active; there is no database, CV storage, application workflow, employer dashboard, administrator moderation backend, or billing integration. Do not treat this site as launched or collect real user data until these are implemented and tested.
+**This is not yet a functioning marketplace.** No live vacancies or database are connected yet; signup/sign-in are not active; CV storage, application workflow, employer dashboard, administrator moderation actions, and billing integration are not implemented. The jobs API returns an unavailable response until DATABASE_URL is configured and db/schema.sql is applied. Do not treat this site as launched or collect real user data until these are implemented and tested.
 
 ## Stack
 

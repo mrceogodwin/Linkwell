@@ -18,6 +18,7 @@ export default function ProfileForm({ initialProfile }: { initialProfile: Profil
   const [location, setLocation] = useState(initialProfile.location ?? "");
   const [skills, setSkills] = useState((initialProfile.skills ?? []).join(", "));
   const [portfolioUrl, setPortfolioUrl] = useState(initialProfile.portfolio_url ?? "");
+  const [profileVisibility, setProfileVisibility] = useState(initialProfile.profile_visibility);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -31,7 +32,7 @@ export default function ProfileForm({ initialProfile }: { initialProfile: Profil
       const response = await fetch("/api/talent/profile", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ headline, biography, location, skills: skills.split(","), portfolio_url: portfolioUrl }),
+        body: JSON.stringify({ headline, biography, location, skills: skills.split(","), portfolio_url: portfolioUrl, profile_visibility: profileVisibility }),
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Could not save your profile.");
@@ -57,6 +58,10 @@ export default function ProfileForm({ initialProfile }: { initialProfile: Profil
     <label className="auth-field">Skills
       <input value={skills} onChange={e => setSkills(e.target.value)} placeholder="React, UI/UX, project management" />
       <small>Separate skills with commas. Up to 30 skills.</small>
+    </label>
+    <label className="auth-field" style={{display:"flex",alignItems:"flex-start",gap:12}}>
+      <input type="checkbox" checked={profileVisibility} onChange={e => setProfileVisibility(e.target.checked)} style={{width:18,height:18,marginTop:4}} />
+      <span><strong>Make my talent profile discoverable</strong><br/><small>When enabled, your profile can be shown in talent discovery. Turn this off to hide it from public discovery.</small></span>
     </label>
     <label className="auth-field">Portfolio or professional website
       <input value={portfolioUrl} onChange={e => setPortfolioUrl(e.target.value)} type="url" placeholder="https://yourportfolio.com" />

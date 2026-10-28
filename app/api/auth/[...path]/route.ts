@@ -3,9 +3,6 @@ import { getNeonAuth } from "@/lib/auth/server";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const auth = getNeonAuth();
-const handlers = auth?.handler();
-
 async function unavailable() {
   return Response.json(
     { error: "Managed authentication is not configured. Please try again later." },
@@ -13,10 +10,34 @@ async function unavailable() {
   );
 }
 
-// Keep the route build-safe when deployment variables are not configured.
-// Once valid variables exist, forward all supported methods to Neon Auth.
-export const GET = handlers?.GET ?? unavailable;
-export const POST = handlers?.POST ?? unavailable;
-export const PUT = handlers?.PUT ?? unavailable;
-export const PATCH = handlers?.PATCH ?? unavailable;
-export const DELETE = handlers?.DELETE ?? unavailable;
+// Resolve the handler when a request arrives, not at module evaluation time.
+// This avoids permanently capturing the unavailable fallback if the module is
+// evaluated before runtime environment variables are available.
+async function forward(
+  method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE",
+  request: Request
+) {
+  const handlers = getNeonAuth()?.handler();
+  const handler = handlers?.[method];
+  return handler ? handler(request) : unavailable();
+}
+
+export async function GET(request: Request) {
+  return forward("GET", request);
+}
+
+export async function POST(request: Request) {
+  return forward("POST", request);
+}
+
+export async function PUT(request: Request) {
+  return forward("PUT", request);
+}
+
+export async function PATCH(request: Request) {
+  return forward("PATCH", request);
+}
+
+export async function DELETE(request: Request) {
+  return forward("DELETE", request);
+}

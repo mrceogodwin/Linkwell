@@ -35,7 +35,7 @@ export async function POST(request: Request) {
 
   try {
     const authResult = await auth.getSession();
-    const authUser = authResult?.user as
+    const authUser = authResult?.data?.user as
       | { id?: unknown; email?: unknown; emailVerified?: unknown }
       | undefined;
     const email = typeof authUser?.email === "string" ? authUser.email.trim().toLowerCase() : "";

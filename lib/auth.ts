@@ -2,6 +2,7 @@ import "server-only";
 import { createHash } from "node:crypto";
 import { cookies } from "next/headers";
 import { getDb } from "@/lib/db";
+import { getNeonAuth } from "@/lib/auth/server";
 
 export type LinkwellUser = {
   id: string;
@@ -12,7 +13,43 @@ export type LinkwellUser = {
   disabled_at: string | null;
 };
 
+/**
+ * Resolve a managed Neon Auth session to an existing Linkwell profile.
+ * We intentionally do not auto-create profiles or accept roles from Neon
+ * user metadata here: role/profile creation needs the onboarding form flow.
+ * Legacy sessions remain supported during the staged migration.
+ */
 export async function getCurrentUser(): Promise<LinkwellUser | null> {
+  try {
+    const neonAuth = getNeonAuth();
+    if (neonAuth) {
+      const authResult = await neonAuth.getSession();
+      const authUser = authResult?.data?.user as
+        | { email?: unknown; emailVerified?: unknown }
+        | undefined;
+      const email =
+        typeof authUser?.email === "string" ? authUser.email.trim().toLowerCase() : "";
+
+      // Do not map an unverified Neon identity to an application account.
+      if (email && authUser?.emailVerified === true && process.env.DATABASE_URL) {
+        const sql = getDb();
+        const rows = await sql.query(
+          `UPDATE users
+           SET email_verified_at = COALESCE(email_verified_at, now()),
+               updated_at = now()
+           WHERE lower(email) = $1
+             AND disabled_at IS NULL
+           RETURNING id, email, display_name, role, email_verified_at, disabled_at`,
+          [email]
+        );
+        if (rows.length) return rows[0] as LinkwellUser;
+      }
+    }
+  } catch {
+    // Continue to the legacy cookie path during migration. This keeps the
+    // existing sign-in flow working if Neon Auth is unavailable or not signed in.
+  }
+
   const token = (await cookies()).get("linkwell_session")?.value;
   if (!token || token.length < 32 || token.length > 256 || !process.env.DATABASE_URL) return null;
   try {

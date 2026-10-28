@@ -21,12 +21,12 @@ export async function GET(request: Request) {
          DELETE FROM auth_email_tokens
          WHERE token_hash = $1 AND expires_at > now()
            AND (purpose = 'verify_email' OR EXISTS (
-             SELECT 1 FROM users u WHERE u.id = auth_email_tokens.user_id AND u.email_verified_at IS NOT NULL
+             SELECT 1 FROM users u WHERE u.id = auth_email_tokens.user_id AND u.email_verified_at IS NOT NULL AND u.disabled_at IS NULL
            ))
          RETURNING user_id, purpose
        ), verified AS (
          UPDATE users u SET email_verified_at = COALESCE(u.email_verified_at, now()), updated_at = now()
-         FROM consumed c WHERE u.id = c.user_id AND c.purpose = 'verify_email'
+         FROM consumed c WHERE u.id = c.user_id AND c.purpose = 'verify_email' AND u.disabled_at IS NULL
          RETURNING u.id
        ), eligible AS (
          SELECT id AS user_id FROM verified

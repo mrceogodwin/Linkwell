@@ -24,25 +24,25 @@ export async function getCurrentUser(): Promise<LinkwellUser | null> {
     const neonAuth = getNeonAuth();
     if (neonAuth) {
       const authResult = await neonAuth.getSession();
-    const authUser = authResult?.user as
-      | { email?: unknown; emailVerified?: unknown }
-      | undefined;
-    const email =
-      typeof authUser?.email === "string" ? authUser.email.trim().toLowerCase() : "";
+      const authUser = authResult?.user as
+        | { email?: unknown; emailVerified?: unknown }
+        | undefined;
+      const email =
+        typeof authUser?.email === "string" ? authUser.email.trim().toLowerCase() : "";
 
-    // Do not map an unverified Neon identity to an application account.
-    if (email && authUser?.emailVerified === true && process.env.DATABASE_URL) {
-      const sql = getDb();
-      const rows = await sql.query(
-        `SELECT id, email, display_name, role, email_verified_at, disabled_at
-         FROM users
-         WHERE lower(email) = $1
-           AND email_verified_at IS NOT NULL
-           AND disabled_at IS NULL
-         LIMIT 1`,
-        [email]
-      );
-      if (rows.length) return rows[0] as LinkwellUser;
+      // Do not map an unverified Neon identity to an application account.
+      if (email && authUser?.emailVerified === true && process.env.DATABASE_URL) {
+        const sql = getDb();
+        const rows = await sql.query(
+          `SELECT id, email, display_name, role, email_verified_at, disabled_at
+           FROM users
+           WHERE lower(email) = $1
+             AND email_verified_at IS NOT NULL
+             AND disabled_at IS NULL
+           LIMIT 1`,
+          [email]
+        );
+        if (rows.length) return rows[0] as LinkwellUser;
       }
     }
   } catch {

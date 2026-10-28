@@ -40,7 +40,7 @@ export async function POST(request: Request) {
       | undefined;
     const email = typeof authUser?.email === "string" ? authUser.email.trim().toLowerCase() : "";
     const authId = typeof authUser?.id === "string" ? authUser.id : "";
-    if (!email || !authId) {
+    if (!authUser || !email || !authId) {
       return NextResponse.json({ error: "Please verify your email and sign in before continuing." }, { status: 401 });
     }
     if (authUser.emailVerified !== true) {

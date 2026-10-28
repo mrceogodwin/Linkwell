@@ -14,7 +14,8 @@ export default function EmployerJobForm() {
   const [loadingJobs, setLoadingJobs] = useState(true);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
-  const [saving, setSaving] = useState(false);\n  const [archivingId, setArchivingId] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [archivingId, setArchivingId] = useState<string | null>(null);
 
   async function loadJobs() {
     setLoadingJobs(true);
@@ -30,7 +31,24 @@ export default function EmployerJobForm() {
 
   useEffect(() => { void loadJobs(); }, []);
 
-  async function archiveListing(job: Listing) {\n    if (archivingId || job.status === "archived") return;\n    if (!window.confirm(`Archive “${job.title}”? It will no longer be publicly available.`)) return;\n    setArchivingId(job.id); setError(""); setMessage("");\n    try {\n      const response = await fetch(`/api/employer/jobs/${job.id}`, {\n        method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: "archived" })\n      });\n      const data = await response.json();\n      if (!response.ok) throw new Error(data.error || "Listing could not be archived.");\n      setMessage(`“${job.title}” has been archived.`);\n      await loadJobs();\n    } catch (e) {\n      setError(e instanceof Error ? e.message : "Listing could not be archived.");\n    } finally { setArchivingId(null); }\n  }\n\n  async function submit(event: FormEvent<HTMLFormElement>) {
+  async function archiveListing(job: Listing) {
+    if (archivingId || job.status === "archived") return;
+    if (!window.confirm(`Archive “${job.title}”? It will no longer be publicly available.`)) return;
+    setArchivingId(job.id); setError(""); setMessage("");
+    try {
+      const response = await fetch(`/api/employer/jobs/${job.id}`, {
+        method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: "archived" })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Listing could not be archived.");
+      setMessage(`“${job.title}” has been archived.`);
+      await loadJobs();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Listing could not be archived.");
+    } finally { setArchivingId(null); }
+  }
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSaving(true); setError(""); setMessage("");
     const form = event.currentTarget;

@@ -24,7 +24,7 @@ export async function getCurrentUser(): Promise<LinkwellUser | null> {
     const neonAuth = getNeonAuth();
     if (neonAuth) {
       const authResult = await neonAuth.getSession();
-      const authUser = authResult?.user as
+      const authUser = authResult?.data?.user as
         | { email?: unknown; emailVerified?: unknown }
         | undefined;
       const email =

@@ -36,14 +36,14 @@ export async function POST(request: Request) {
   try {
     const authResult = await auth.getSession();
     const authUser = authResult?.user as
-      | { id?: unknown; email?: unknown; emailVerified?: unknown; name?: unknown }
+      | { id?: unknown; email?: unknown; emailVerified?: unknown }
       | undefined;
     const email = typeof authUser?.email === "string" ? authUser.email.trim().toLowerCase() : "";
     const authId = typeof authUser?.id === "string" ? authUser.id : "";
     if (!email || !authId) {
       return NextResponse.json({ error: "Please verify your email and sign in before continuing." }, { status: 401 });
     }
-    if (authUser?.emailVerified !== true) {
+    if (authUser.emailVerified !== true) {
       return NextResponse.json({ error: "Your email must be verified before your Linkwell profile can be activated." }, { status: 403 });
     }
 
@@ -72,27 +72,30 @@ export async function POST(request: Request) {
     }
 
     if (!rows.length && mode === "signup") {
-      const newUser = await sql.query(
-        \`WITH new_user AS (
-           INSERT INTO users (id, auth_provider_id, email, display_name, role, email_verified_at)
-           VALUES (gen_random_uuid(), $1, $2, $3, $4::user_role, now())
-           ON CONFLICT DO NOTHING
-           RETURNING id, email, display_name, role, email_verified_at, disabled_at
-         ), talent_profile AS (
-           INSERT INTO talent_profiles (user_id)
-           SELECT id FROM new_user WHERE role = 'talent'
-           ON CONFLICT DO NOTHING
-           RETURNING user_id
-         ), employer_profile AS (
-           INSERT INTO employer_profiles (user_id, company_name)
-           SELECT id, $5::text FROM new_user WHERE role = 'employer'
-           ON CONFLICT DO NOTHING
-           RETURNING user_id
-         )
-         SELECT * FROM new_user\`,
-        ["neon:" + authId, email, displayName, requestedRole, companyName || null]
-      );
-      rows = newUser;
+      const createUserSql = [
+        "WITH new_user AS (",
+        "INSERT INTO users (id, auth_provider_id, email, display_name, role, email_verified_at)",
+        "VALUES (gen_random_uuid(), $1, $2, $3, $4::user_role, now())",
+        "ON CONFLICT DO NOTHING",
+        "RETURNING id, email, display_name, role, email_verified_at, disabled_at",
+        "), talent_profile AS (",
+        "INSERT INTO talent_profiles (user_id)",
+        "SELECT id FROM new_user WHERE role = 'talent'",
+        "ON CONFLICT DO NOTHING RETURNING user_id",
+        "), employer_profile AS (",
+        "INSERT INTO employer_profiles (user_id, company_name)",
+        "SELECT id, $5::text FROM new_user WHERE role = 'employer'",
+        "ON CONFLICT DO NOTHING RETURNING user_id",
+        ") SELECT * FROM new_user"
+      ].join(" ");
+      rows = await sql.query(createUserSql, [
+        "neon:" + authId,
+        email,
+        displayName,
+        requestedRole,
+        companyName || null
+      ]);
+
       // A concurrent signup may have created the same email. Re-read it and
       // preserve the existing role instead of overwriting account privileges.
       if (!rows.length) {
@@ -123,13 +126,12 @@ export async function POST(request: Request) {
         [user.id]
       );
       if (!existingProfile.length) {
-        const safeCompanyName = companyName.length >= 2 ? companyName : "";
-        if (!safeCompanyName) {
+        if (companyName.length < 2) {
           return NextResponse.json({ error: "Complete your employer profile by providing your company name." }, { status: 409 });
         }
         await sql.query(
           "INSERT INTO employer_profiles (user_id, company_name) VALUES ($1::uuid, $2) ON CONFLICT DO NOTHING",
-          [user.id, safeCompanyName]
+          [user.id, companyName]
         );
       }
     }

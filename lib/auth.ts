@@ -2,7 +2,7 @@ import "server-only";
 import { createHash } from "node:crypto";
 import { cookies } from "next/headers";
 import { getDb } from "@/lib/db";
-import { neonAuth } from "@/lib/auth/server";
+import { getNeonAuth } from "@/lib/auth/server";
 
 export type LinkwellUser = {
   id: string;
@@ -21,7 +21,9 @@ export type LinkwellUser = {
  */
 export async function getCurrentUser(): Promise<LinkwellUser | null> {
   try {
-    const authResult = await neonAuth.getSession();
+    const neonAuth = getNeonAuth();
+    if (neonAuth) {
+      const authResult = await neonAuth.getSession();
     const authUser = authResult?.user as
       | { email?: unknown; emailVerified?: unknown }
       | undefined;
@@ -41,6 +43,7 @@ export async function getCurrentUser(): Promise<LinkwellUser | null> {
         [email]
       );
       if (rows.length) return rows[0] as LinkwellUser;
+      }
     }
   } catch {
     // Continue to the legacy cookie path during migration. This keeps the

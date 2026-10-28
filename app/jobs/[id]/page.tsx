@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ArrowLeft, ArrowRight, BriefcaseBusiness, MapPin, ShieldCheck } from "lucide-react";
+import SaveJobButton from "../save-job-button";
 import { getDb } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
@@ -61,7 +62,7 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
         <div className="job-detail-tags"><span>{job.listing_type.replace("_","-")}</span><span>{job.work_arrangement.replace("_","-")}</span><span>{job.category}</span></div>
         <div className="job-detail-meta">{job.location && <span><MapPin size={15}/>{job.location}</span>}{salary && <strong>{salary}</strong>}<span><ShieldCheck size={15}/> Reviewed by Linkwell</span></div>
         <div className="job-detail-copy"><h3>About the opportunity</h3><p>{job.description}</p>{job.requirements && <><h3>What you’ll need</h3><p>{job.requirements}</p></>}</div>
-        {safeApplyUrl ? <a className="button button-dark" href={safeApplyUrl} target="_blank" rel="noopener noreferrer">Apply with employer <ArrowRight size={16}/></a> : <div className="apply-notice">Applications through Linkwell are coming soon. This listing does not yet have a verified external application link.</div>}
+        <div style={{display:"flex",gap:10,flexWrap:"wrap",alignItems:"center"}}><SaveJobButton jobId={job.id}/>{safeApplyUrl ? <a className="button button-dark" href={safeApplyUrl} target="_blank" rel="noopener noreferrer">Apply with employer <ArrowRight size={16}/></a> : <div className="apply-notice">Applications through Linkwell are coming soon. This listing does not yet have a verified external application link.</div>}</div>
         <small>Never pay a recruiter to apply for a job. Verify the employer before sharing personal information.</small>
       </article>
     </section>

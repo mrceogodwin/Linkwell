@@ -32,7 +32,7 @@ export default async function CompanyDashboardPage() {
   }
 
   return <main className="subpage">
-    <header className="nav wrap"><a className="brand" href="/"><span className="brand-mark"><i/><i/><i/><i/></span><span>linkwell</span></a><nav className="nav-actions"><a className="sign-in" href="/dashboard">Workspace</a><span className="admin-pill"><Building2 size={15}/> Employer</span><form action="/api/auth/logout" method="post"><button className="button button-dark button-small" type="submit">Sign out</button></form></nav></header>
+    <header className="nav wrap"><a className="brand" href="/"><span className="brand-mark"><i/><i/><i/><i/></span><span>linkwell</span></a><nav className="nav-actions"><a className="sign-in" href="/dashboard">Workspace</a><a className="button button-light button-small" href="/dashboard/company/applicants">Applicants</a><span className="admin-pill"><Building2 size={15}/> Employer</span><form action="/api/auth/logout" method="post"><button className="button button-dark button-small" type="submit">Sign out</button></form></nav></header>
     <section className="wrap admin-shell employer-shell">
       <div className="eyebrow"><span/> EMPLOYER WORKSPACE</div>
       <h1>Bring great people on board.</h1>

@@ -3,6 +3,8 @@ import { getNeonAuth } from "@/lib/auth/server";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+type AuthRouteContext = { params: Promise<{ path: string[] }> };
+
 async function unavailable() {
   return Response.json(
     { error: "Managed authentication is not configured. Please try again later." },
@@ -10,34 +12,33 @@ async function unavailable() {
   );
 }
 
-// Resolve the handler when a request arrives, not at module evaluation time.
-// This avoids permanently capturing the unavailable fallback if the module is
-// evaluated before runtime environment variables are available.
+// Resolve Neon Auth on each request and forward the Next.js route context.
 async function forward(
   method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE",
-  request: Request
+  request: Request,
+  context: AuthRouteContext
 ) {
   const handlers = getNeonAuth()?.handler();
   const handler = handlers?.[method];
-  return handler ? handler(request) : unavailable();
+  return handler ? handler(request, context) : unavailable();
 }
 
-export async function GET(request: Request) {
-  return forward("GET", request);
+export async function GET(request: Request, context: AuthRouteContext) {
+  return forward("GET", request, context);
 }
 
-export async function POST(request: Request) {
-  return forward("POST", request);
+export async function POST(request: Request, context: AuthRouteContext) {
+  return forward("POST", request, context);
 }
 
-export async function PUT(request: Request) {
-  return forward("PUT", request);
+export async function PUT(request: Request, context: AuthRouteContext) {
+  return forward("PUT", request, context);
 }
 
-export async function PATCH(request: Request) {
-  return forward("PATCH", request);
+export async function PATCH(request: Request, context: AuthRouteContext) {
+  return forward("PATCH", request, context);
 }
 
-export async function DELETE(request: Request) {
-  return forward("DELETE", request);
+export async function DELETE(request: Request, context: AuthRouteContext) {
+  return forward("DELETE", request, context);
 }

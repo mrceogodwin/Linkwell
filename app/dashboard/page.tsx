@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { ArrowRight, BriefcaseBusiness, Bookmark, UserRound, ShieldCheck } from "lucide-react";
+import { ArrowRight, BriefcaseBusiness, Bookmark, UserRound, ShieldCheck, FileText } from "lucide-react";
 import { getCurrentUser } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";

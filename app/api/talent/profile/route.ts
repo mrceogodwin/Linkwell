@@ -39,6 +39,7 @@ export async function PATCH(request: Request) {
   const biography = asText(body.biography, 3000);
   const location = asText(body.location, 120);
   const portfolioUrl = asText(body.portfolio_url, 500);
+  const profileVisibility = typeof body.profile_visibility === "boolean" ? body.profile_visibility : undefined;
   const rawSkills = Array.isArray(body.skills) ? body.skills : typeof body.skills === "string" ? body.skills.split(",") : [];
   const skills = [...new Set(rawSkills.filter((skill): skill is string => typeof skill === "string").map(skill => skill.trim().slice(0, 40)).filter(Boolean))].slice(0, 30);
 
@@ -56,10 +57,11 @@ export async function PATCH(request: Request) {
     const rows = await sql.query(
       `UPDATE talent_profiles
        SET headline = $2, biography = $3, location = $4, skills = $5::text[],
-           portfolio_url = NULLIF($6, ''), updated_at = now()
+           portfolio_url = NULLIF($6, ''),
+           profile_visibility = COALESCE($7::boolean, profile_visibility), updated_at = now()
        WHERE user_id = $1::uuid
        RETURNING headline, biography, location, skills, portfolio_url, profile_visibility, updated_at`,
-      [user.id, headline || null, biography || null, location || null, skills, portfolioUrl]
+      [user.id, headline || null, biography || null, location || null, skills, portfolioUrl, profileVisibility ?? null]
     );
     if (!rows.length) return NextResponse.json({ error: "Talent profile not found." }, { status: 404 });
     return NextResponse.json({ message: "Profile saved.", profile: rows[0] });

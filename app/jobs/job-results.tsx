@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { BriefcaseBusiness, MapPin, Clock3, Search, ShieldCheck } from "lucide-react";
 
@@ -61,7 +62,7 @@ export default function JobResults({ q = "", work = "", type = "", category = ""
       : "";
     return <article className="job-card" key={job.id}>
       <div className="job-card-icon"><BriefcaseBusiness size={21}/></div>
-      <div className="job-card-main"><div className="job-card-company">{job.company}</div><h3>{job.title}</h3><p>{job.description}</p><div className="job-tags"><span>{job.listing_type.replace("_", "-")}</span><span>{job.work_arrangement.replace("_", "-")}</span>{job.category && <span>{job.category}</span>}</div></div>
+      <div className="job-card-main"><div className="job-card-company">{job.company}</div><h3><Link href={"/jobs/" + job.id} className="job-title-link">{job.title}</Link></h3><p>{job.description}</p><div className="job-tags"><span>{job.listing_type.replace("_", "-")}</span><span>{job.work_arrangement.replace("_", "-")}</span>{job.category && <span>{job.category}</span>}</div></div>
       <div className="job-card-meta">{job.location && <span><MapPin size={13}/>{job.location}</span>}{salary && <strong>{salary}</strong>}<span><ShieldCheck size={13}/>Approved listing</span></div>
     </article>;
   })}</div>;

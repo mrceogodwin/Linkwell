@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { CheckCircle2, LoaderCircle, Users } from "lucide-react";
 
 type Application = {
@@ -27,6 +27,8 @@ export default function ApplicantsList() {
   const [busyId, setBusyId] = useState("");
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [savedId, setSavedId] = useState("");
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
 
   useEffect(() => {
     let active = true;
@@ -62,10 +64,40 @@ export default function ApplicantsList() {
     }
   }
 
+  const filteredItems = useMemo(() => {
+    const query = search.trim().toLocaleLowerCase();
+    return items.filter(item => {
+      const matchesStatus = statusFilter === "all" || item.status === statusFilter;
+      const matchesQuery = !query || [item.applicant_name, item.applicant_email, item.job_title]
+        .some(value => value.toLocaleLowerCase().includes(query));
+      return matchesStatus && matchesQuery;
+    });
+  }, [items, search, statusFilter]);
+
+  const statusCounts = items.reduce<Record<string, number>>((counts, item) => {
+    counts[item.status] = (counts[item.status] ?? 0) + 1;
+    return counts;
+  }, {});
+
   if (loading) return <div className="empty-state"><LoaderCircle size={20}/> Loading applicants…</div>;
   return <div className="applicant-list">
     {error && <p className="auth-feedback auth-error" role="alert">{error}</p>}
-    {items.length === 0 ? <div className="empty-state"><div className="empty-icon"><Users size={24}/></div><h3>No applications yet.</h3><p>When talent applies to one of your published opportunities, their application will appear here.</p><a className="button button-light" href="/dashboard/company">Manage listings</a></div> : items.map(item => <article className="application-row applicant-row" key={item.id}>
+    {items.length > 0 && <section aria-label="Filter applicants" style={{display:"grid",gridTemplateColumns:"minmax(0,1fr) minmax(180px,240px)",gap:12,marginBottom:18}}>
+      <label className="auth-field">Search applicants
+        <input type="search" value={search} onChange={event => setSearch(event.target.value)} placeholder="Name, email or opportunity title" />
+      </label>
+      <label className="auth-field">Application status
+        <select value={statusFilter} onChange={event => setStatusFilter(event.target.value)}>
+          <option value="all">All statuses ({items.length})</option>
+          <option value="submitted">Submitted ({statusCounts.submitted ?? 0})</option>
+          <option value="reviewing">Under review ({statusCounts.reviewing ?? 0})</option>
+          <option value="shortlisted">Shortlisted ({statusCounts.shortlisted ?? 0})</option>
+          <option value="rejected">Not selected ({statusCounts.rejected ?? 0})</option>
+          <option value="hired">Hired ({statusCounts.hired ?? 0})</option>
+        </select>
+      </label>
+    </section>}
+    {items.length === 0 ? <div className="empty-state"><div className="empty-icon"><Users size={24}/></div><h3>No applications yet.</h3><p>When talent applies to one of your published opportunities, their application will appear here.</p><a className="button button-light" href="/dashboard/company">Manage listings</a></div> : filteredItems.length === 0 ? <div className="empty-state"><div className="empty-icon"><Users size={24}/></div><h3>No matching applicants.</h3><p>Try a different search term or status filter.</p><button className="button button-light" type="button" onClick={() => { setSearch(""); setStatusFilter("all"); }}>Clear filters</button></div> : filteredItems.map(item => <article className="application-row applicant-row" key={item.id}>
       <div className="job-card-icon"><Users size={19}/></div>
       <div className="application-main">
         <h2>{item.applicant_name}</h2>

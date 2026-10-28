@@ -1,2 +1,27 @@
-import { ArrowRight, Globe2, ShieldCheck, Users } from "lucide-react";
-export default function TalentPage() { return <main className="subpage"><header className="nav wrap"><a className="brand" href="/"><span className="brand-mark"><i/><i/><i/><i/></span><span>linkwell</span></a><div className="nav-actions"><a className="sign-in" href="/sign-in">Log in</a><a className="button button-dark button-small" href="/sign-up">Get started <ArrowRight size={15}/></a></div></header><section className="jobs-hero wrap"><a className="back-link" href="/">← Back home</a><div className="eyebrow"><span/> FOR TALENT</div><h1>Your skills deserve a <em>wider stage.</em></h1><p>Find opportunities that match your ambitions, from full-time roles to freelance projects and contract work. Linkwell is starting with African talent and global reach.</p><div className="hero-ctas"><a className="button button-dark" href="/jobs">Explore opportunities <ArrowRight size={16}/></a><a className="button button-light" href="/sign-up">Create an account</a></div></section><section className="wrap section"><div className="role-grid"><article className="role-card mint"><span className="role-icon"><Globe2 size={20}/></span><strong>Look beyond borders</strong><small>Explore work with different locations and arrangements.</small></article><article className="role-card cream"><span className="role-icon"><ShieldCheck size={20}/></span><strong>Review-first listings</strong><small>Listings are intended to be moderated before publication.</small></article><article className="role-card peach"><span className="role-icon"><Users size={20}/></span><strong>Keep your work together</strong><small>Profiles, applications and saved jobs are planned features.</small></article><article className="role-card lavender"><span className="role-icon"><ArrowRight size={20}/></span><strong>Free talent access</strong><small>Talent accounts are planned to be free.</small></article></div></section><section className="wrap empty-state"><h3>Talent accounts are not open yet.</h3><p>We will enable registration after authentication, private file storage and application workflows have been connected and tested.</p><div className="empty-actions"><a className="button button-dark" href="/sign-up">Registration status</a></div></section></main> }
+import type { Metadata } from "next";
+import { ArrowRight } from "lucide-react";
+import TalentDirectory from "./talent-directory";
+
+export const metadata: Metadata = {
+  title: "Discover talent",
+  description: "Find discoverable African professionals by skills, roles and location on Linkwell.",
+};
+
+export default function TalentPage() {
+  return <main className="subpage">
+    <header className="nav wrap">
+      <a className="brand" href="/" aria-label="Linkwell home"><span className="brand-mark"><i/><i/><i/><i/></span><span>linkwell</span></a>
+      <nav className="desktop-nav"><a href="/jobs">Find work</a><a href="/companies">For employers</a><a href="/talent" aria-current="page">Discover talent</a></nav>
+      <div className="nav-actions"><a className="sign-in" href="/sign-in">Log in</a><a className="button button-dark button-small" href="/sign-up">Get started <ArrowRight size={15}/></a></div>
+    </header>
+    <section className="jobs-hero wrap">
+      <a className="back-link" href="/">← Back home</a>
+      <div className="eyebrow"><span/> DISCOVER AFRICAN TALENT</div>
+      <h1>Great people. <em>Wider possibilities.</em></h1>
+      <p>Search skills, professional headlines and locations. Only verified talent members who have chosen to make their profile discoverable appear in this directory.</p>
+      <div className="hero-ctas"><a className="button button-dark" href="/sign-up">Create your talent profile <ArrowRight size={16}/></a><a className="button button-light" href="/jobs">Explore opportunities</a></div>
+    </section>
+    <TalentDirectory/>
+    <footer className="footer"><div className="wrap footer-bottom"><span>© {new Date().getFullYear()} Linkwell</span><a href="/">Back to home</a></div></footer>
+  </main>;
+}

@@ -4,6 +4,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const auth = getNeonAuth();
+const handlers = auth?.handler();
 
 async function unavailable() {
   return Response.json(
@@ -14,8 +15,8 @@ async function unavailable() {
 
 // Keep the route build-safe when deployment variables are not configured.
 // Once valid variables exist, forward all supported methods to Neon Auth.
-export const GET = auth ? auth.handler().GET : unavailable;
-export const POST = auth ? auth.handler().POST : unavailable;
-export const PUT = auth ? auth.handler().PUT : unavailable;
-export const PATCH = auth ? auth.handler().PATCH : unavailable;
-export const DELETE = auth ? auth.handler().DELETE : unavailable;
+export const GET = handlers?.GET ?? unavailable;
+export const POST = handlers?.POST ?? unavailable;
+export const PUT = handlers?.PUT ?? unavailable;
+export const PATCH = handlers?.PATCH ?? unavailable;
+export const DELETE = handlers?.DELETE ?? unavailable;

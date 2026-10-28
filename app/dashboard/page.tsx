@@ -15,7 +15,7 @@ export default async function DashboardPage() {
     : [{ href: "/dashboard/profile", title: "Talent profile", detail: "Build the profile employers can use to understand your experience.", icon: UserRound }, { href: "/jobs", title: "Find opportunities", detail: "Browse reviewed jobs, freelance projects and contracts.", icon: BriefcaseBusiness }, { href: "/dashboard/saved", title: "Saved opportunities", detail: "Your saved-job workspace will appear here as its workflow is connected.", icon: Bookmark }];
 
   return <main className="subpage">
-    <header className="nav wrap"><a className="brand" href="/"><span className="brand-mark"><i/><i/><i/><i/></span><span>linkwell</span></a><nav className="nav-actions"><span className="sign-in">{user.display_name}</span><a className="button button-light button-small" href="/jobs">Browse jobs</a></nav></header>
+    <header className="nav wrap"><a className="brand" href="/"><span className="brand-mark"><i/><i/><i/><i/></span><span>linkwell</span></a><nav className="nav-actions"><span className="sign-in">{user.display_name}</span><a className="button button-light button-small" href="/jobs">Browse jobs</a><form action="/api/auth/logout" method="post"><button className="button button-dark button-small" type="submit">Sign out</button></form></nav></header>
     <section className="wrap dashboard-shell">
       <div className="eyebrow"><span/> YOUR LINKWELL WORKSPACE</div>
       <h1>Welcome back, {user.display_name.split(" ")[0]}.</h1>

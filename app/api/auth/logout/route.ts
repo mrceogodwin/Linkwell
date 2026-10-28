@@ -2,11 +2,20 @@ import { NextResponse } from "next/server";
 import { createHash } from "node:crypto";
 import { cookies } from "next/headers";
 import { getDb } from "@/lib/db";
+import { getNeonAuth } from "@/lib/auth/server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
+  // Revoke the managed Neon Auth session as well as any legacy Linkwell session.
+  try {
+    const auth = getNeonAuth();
+    if (auth) await auth.signOut();
+  } catch {
+    // Still clear the app session cookie below if Neon Auth is unavailable.
+  }
+
   const token = (await cookies()).get("linkwell_session")?.value;
   if (token && process.env.DATABASE_URL) {
     try {

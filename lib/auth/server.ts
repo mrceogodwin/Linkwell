@@ -6,16 +6,18 @@ type NeonAuthInstance = ReturnType<typeof createNeonAuth>;
 let cachedAuth: NeonAuthInstance | null = null;
 
 /**
- * Return null when deployment configuration is incomplete instead of throwing
- * during Next.js module evaluation. Routes can then return a controlled 503,
- * while legacy application pages can continue to load during staged rollout.
+ * Return null when deployment configuration is incomplete or invalid instead
+ * of crashing route initialization. Legacy auth remains available during the
+ * staged rollout when Neon Auth cannot be initialized.
  */
 export function getNeonAuth(): NeonAuthInstance | null {
   const baseUrl = process.env.NEON_AUTH_BASE_URL;
   const cookieSecret = process.env.NEON_AUTH_COOKIE_SECRET;
 
   if (!baseUrl || !cookieSecret || cookieSecret.length < 32) return null;
-  if (!cachedAuth) {
+  if (cachedAuth) return cachedAuth;
+
+  try {
     cachedAuth = createNeonAuth({
       baseUrl,
       cookies: {
@@ -23,6 +25,10 @@ export function getNeonAuth(): NeonAuthInstance | null {
         sessionDataTtl: 60,
       },
     });
+    return cachedAuth;
+  } catch {
+    // Misconfigured values should fail closed; callers can return a controlled
+    // unavailable response or continue through the legacy session path.
+    return null;
   }
-  return cachedAuth;
 }

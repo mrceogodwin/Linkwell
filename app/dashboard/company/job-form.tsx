@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
-import { CheckCircle2, Clock3, PlusCircle } from "lucide-react";
+import { Archive, CheckCircle2, Clock3, PlusCircle } from "lucide-react";
 
 type Listing = {
   id: string; title: string; category: string; listing_type: string;
@@ -14,7 +14,7 @@ export default function EmployerJobForm() {
   const [loadingJobs, setLoadingJobs] = useState(true);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
-  const [saving, setSaving] = useState(false);
+  const [saving, setSaving] = useState(false);\n  const [archivingId, setArchivingId] = useState<string | null>(null);
 
   async function loadJobs() {
     setLoadingJobs(true);
@@ -30,7 +30,7 @@ export default function EmployerJobForm() {
 
   useEffect(() => { void loadJobs(); }, []);
 
-  async function submit(event: FormEvent<HTMLFormElement>) {
+  async function archiveListing(job: Listing) {\n    if (archivingId || job.status === "archived") return;\n    if (!window.confirm(`Archive “${job.title}”? It will no longer be publicly available.`)) return;\n    setArchivingId(job.id); setError(""); setMessage("");\n    try {\n      const response = await fetch(`/api/employer/jobs/${job.id}`, {\n        method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: "archived" })\n      });\n      const data = await response.json();\n      if (!response.ok) throw new Error(data.error || "Listing could not be archived.");\n      setMessage(`“${job.title}” has been archived.`);\n      await loadJobs();\n    } catch (e) {\n      setError(e instanceof Error ? e.message : "Listing could not be archived.");\n    } finally { setArchivingId(null); }\n  }\n\n  async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSaving(true); setError(""); setMessage("");
     const form = event.currentTarget;
@@ -93,7 +93,7 @@ export default function EmployerJobForm() {
     <section className="employer-panel employer-listings-panel">
       <div className="employer-panel-heading"><div><h2>Your opportunities</h2><p>Track submissions and moderation decisions.</p></div><span className="employer-count">{jobs.length}</span></div>
       {loadingJobs ? <p className="employer-listing-empty">Loading your listings…</p> : jobs.length === 0 ? <p className="employer-listing-empty">No listings yet. Your submitted opportunities will appear here.</p> :
-        <div className="employer-listings">{jobs.map(job => <article className="employer-listing" key={job.id}><div><h3>{job.title}</h3><p>{job.category} · {pretty(job.listing_type)} · {pretty(job.work_arrangement)}</p>{job.review_reason && <p className="review-reason">Review note: {job.review_reason}</p>}</div><span className={"listing-status status-" + job.status}>{pretty(job.status)}</span></article>)}</div>}
+        <div className="employer-listings">{jobs.map(job => <article className="employer-listing" key={job.id}><div><h3>{job.title}</h3><p>{job.category} · {pretty(job.listing_type)} · {pretty(job.work_arrangement)}</p>{job.review_reason && <p className="review-reason">Review note: {job.review_reason}</p>}</div><div className="employer-listing-actions"><span className={"listing-status status-" + job.status}>{pretty(job.status)}</span>{job.status !== "archived" && <button type="button" className="button button-light button-small" onClick={() => void archiveListing(job)} disabled={archivingId !== null} aria-label={`Archive ${job.title}`}>{archivingId === job.id ? "Archiving…" : <><Archive size={14}/> Archive</>}</button>}</div></article>)}</div>}
     </section>
   </div>;
 }

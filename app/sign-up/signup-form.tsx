@@ -11,10 +11,11 @@ export default function SignupForm({ initialRole }: { initialRole: string }) {
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const formElement = event.currentTarget;
     setMessage("");
     setError("");
     setBusy(true);
-    const form = new FormData(event.currentTarget);
+    const form = new FormData(formElement);
     const payload = {
       display_name: String(form.get("display_name") ?? "").trim(),
       email: String(form.get("email") ?? "").trim(),
@@ -30,7 +31,7 @@ export default function SignupForm({ initialRole }: { initialRole: string }) {
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Could not create your account.");
       setMessage(result.message || "Check your email for a verification link.");
-      event.currentTarget.reset();
+      formElement.reset();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong. Please try again.");
     } finally {

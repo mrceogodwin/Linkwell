@@ -33,7 +33,7 @@ export default async function AdminPage() {
   }
 
   return <main className="subpage">
-    <header className="nav wrap"><a className="brand" href="/"><span className="brand-mark"><i/><i/><i/><i/></span><span>linkwell</span></a><nav className="nav-actions"><a className="sign-in" href="/dashboard">Workspace</a><span className="admin-pill"><ShieldCheck size={15}/> Administrator</span></nav></header>
+    <header className="nav wrap"><a className="brand" href="/"><span className="brand-mark"><i/><i/><i/><i/></span><span>linkwell</span></a><nav className="nav-actions"><a className="sign-in" href="/dashboard">Workspace</a><a className="button button-light button-small" href="/admin/employers">Employers</a><span className="admin-pill"><ShieldCheck size={15}/> Administrator</span><form action="/api/auth/logout" method="post"><button className="button button-dark button-small" type="submit">Sign out</button></form></nav></header>
     <section className="wrap admin-shell">
       <div className="eyebrow"><span/> TRUST & SAFETY</div>
       <h1>Listing moderation</h1>

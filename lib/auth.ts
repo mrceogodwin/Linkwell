@@ -34,12 +34,12 @@ export async function getCurrentUser(): Promise<LinkwellUser | null> {
       if (email && authUser?.emailVerified === true && process.env.DATABASE_URL) {
         const sql = getDb();
         const rows = await sql.query(
-          `SELECT id, email, display_name, role, email_verified_at, disabled_at
-           FROM users
+          `UPDATE users
+           SET email_verified_at = COALESCE(email_verified_at, now()),
+               updated_at = now()
            WHERE lower(email) = $1
-             AND email_verified_at IS NOT NULL
              AND disabled_at IS NULL
-           LIMIT 1`,
+           RETURNING id, email, display_name, role, email_verified_at, disabled_at`,
           [email]
         );
         if (rows.length) return rows[0] as LinkwellUser;

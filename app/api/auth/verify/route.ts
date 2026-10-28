@@ -46,12 +46,14 @@ export async function GET(request: Request) {
          SELECT user_id, $2, now() + interval '30 days' FROM eligible
          RETURNING user_id
        )
-       SELECT user_id FROM session_created LIMIT 1`,
+       SELECT s.user_id, u.role FROM session_created s JOIN users u ON u.id = s.user_id LIMIT 1`,
       [hash(token), hash(sessionToken)]
     );
     if (!rows.length) return NextResponse.redirect(new URL("/sign-in?error=invalid-link", url.origin));
 
-    const response = NextResponse.redirect(new URL("/dashboard", url.origin));
+    const verifiedUser = rows[0] as { user_id: string; role: "talent" | "employer" | "admin" };
+    const destination = verifiedUser.role === "employer" ? "/dashboard/company" : verifiedUser.role === "admin" ? "/admin" : "/dashboard";
+    const response = NextResponse.redirect(new URL(destination, url.origin));
     response.cookies.set("linkwell_session", sessionToken, {
       httpOnly: true, secure: url.protocol === "https:", sameSite: "lax",
       path: "/", maxAge: 60 * 60 * 24 * 30,

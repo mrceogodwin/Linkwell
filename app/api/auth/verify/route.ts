@@ -7,6 +7,24 @@ export const dynamic = "force-dynamic";
 
 const hash = (value: string) => createHash("sha256").update(value).digest("hex");
 
+function safeInternalPath(value: string | null) {
+  if (!value || !value.startsWith("/") || value.startsWith("//") || value.includes("\\")) return "";
+  try {
+    const parsed = new URL(value, "https://linkwell.invalid");
+    return parsed.origin === "https://linkwell.invalid" ? parsed.pathname + parsed.search + parsed.hash : "";
+  } catch {
+    return "";
+  }
+}
+
+function allowedForRole(path: string, role: "talent" | "employer" | "admin") {
+  const pathname = path.split(/[?#]/, 1)[0];
+  const matches = (base: string) => pathname === base || pathname.startsWith(base + "/");
+  if (role === "admin") return matches("/admin") || matches("/dashboard");
+  if (role === "employer") return matches("/dashboard/company") || matches("/jobs");
+  return matches("/dashboard") || matches("/jobs");
+}
+
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const token = url.searchParams.get("token") ?? "";
@@ -52,7 +70,9 @@ export async function GET(request: Request) {
     if (!rows.length) return NextResponse.redirect(new URL("/sign-in?error=invalid-link", url.origin));
 
     const verifiedUser = rows[0] as { user_id: string; role: "talent" | "employer" | "admin" };
-    const destination = verifiedUser.role === "employer" ? "/dashboard/company" : verifiedUser.role === "admin" ? "/admin" : "/dashboard";
+    const defaultDestination = verifiedUser.role === "employer" ? "/dashboard/company" : verifiedUser.role === "admin" ? "/admin" : "/dashboard";
+    const requestedNext = safeInternalPath(url.searchParams.get("next"));
+    const destination = requestedNext && allowedForRole(requestedNext, verifiedUser.role) ? requestedNext : defaultDestination;
     const response = NextResponse.redirect(new URL(destination, url.origin));
     response.cookies.set("linkwell_session", sessionToken, {
       httpOnly: true, secure: url.protocol === "https:", sameSite: "lax",

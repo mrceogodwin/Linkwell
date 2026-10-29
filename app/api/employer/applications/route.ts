@@ -40,15 +40,17 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: "Invalid request." }, { status: 400 });
   }
   const id = typeof body.application_id === "string" ? body.application_id : "";
-  const status = typeof body.status === "string" ? body.status : "";
+  const hasStatus = Object.prototype.hasOwnProperty.call(body, "status");
+  const status = typeof body.status === "string" ? body.status : null;
   const notes = typeof body.employer_notes === "string" ? body.employer_notes.trim().slice(0, 2000) : "";
-  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id) || !allowedStatuses.has(status)) {
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id) || (hasStatus && (!status || !allowedStatuses.has(status)))) {
     return NextResponse.json({ error: "Choose a valid application and status." }, { status: 400 });
   }
   try {
     const rows = await getDb().query(
       `UPDATE applications a
-       SET status = $3::application_status, employer_notes = NULLIF($4, ''), updated_at = now()
+       SET status = CASE WHEN $3::text IS NULL THEN a.status ELSE $3::application_status END,
+           employer_notes = NULLIF($4, ''), updated_at = now()
        FROM jobs j
        WHERE a.id = $1::uuid AND a.job_id = j.id AND j.employer_user_id = $2::uuid
        RETURNING a.id, a.status, a.employer_notes, a.updated_at`,

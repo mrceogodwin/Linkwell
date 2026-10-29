@@ -58,10 +58,10 @@ export default function ModerationQueue({ jobs }: { jobs: PendingJob[] }) {
       <label className="moderation-label">Listing type
         <select value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)} style={{display:"block",width:"100%",marginTop:6}}>
           <option value="all">All types ({items.length})</option>
-          <option value="job">Jobs</option>
-          <option value="gig">Gigs</option>
-          <option value="service">Services</option>
-          <option value="internship">Internships</option>
+          <option value="full_time">Full-time</option>
+          <option value="part_time">Part-time</option>
+          <option value="freelance">Freelance</option>
+          <option value="contract">Contract</option>
         </select>
       </label>
     </section>

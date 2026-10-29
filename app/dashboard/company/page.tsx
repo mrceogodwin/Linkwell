@@ -17,6 +17,7 @@ export default async function CompanyDashboardPage() {
   if (!employer) redirect("/sign-in?next=%2Fdashboard%2Fcompany");
 
   let jobs: Array<{id:string;title:string;category:string;listing_type:string;work_arrangement:string;status:string;submitted_at:string|null;created_at:string;review_reason:string|null;applicant_count:number}> = [];
+  let listingCountsByStatus: Record<string, number> = {};
   let unavailable = false;
   try {
     jobs = await getDb().query(
@@ -27,16 +28,25 @@ export default async function CompanyDashboardPage() {
        GROUP BY j.id ORDER BY j.created_at DESC LIMIT 100`,
       [employer.id]
     ) as typeof jobs;
+
+    const statusRows = await getDb().query(
+      `SELECT status, COUNT(*)::int AS count
+       FROM jobs
+       WHERE employer_user_id = $1::uuid
+       GROUP BY status`,
+      [employer.id]
+    ) as Array<{ status: string; count: number }>;
+    listingCountsByStatus = Object.fromEntries(statusRows.map(row => [row.status, row.count]));
   } catch {
     unavailable = true;
   }
 
   const listingCounts = [
-    { label: "Published", value: jobs.filter(job => job.status === "published").length },
-    { label: "Awaiting review", value: jobs.filter(job => job.status === "pending_review").length },
-    { label: "Changes requested", value: jobs.filter(job => job.status === "rejected").length },
-    { label: "Drafts", value: jobs.filter(job => job.status === "draft").length },
-    { label: "Archived", value: jobs.filter(job => job.status === "archived").length },
+    { label: "Published", value: listingCountsByStatus.published ?? 0 },
+    { label: "Awaiting review", value: listingCountsByStatus.pending_review ?? 0 },
+    { label: "Changes requested", value: listingCountsByStatus.rejected ?? 0 },
+    { label: "Drafts", value: listingCountsByStatus.draft ?? 0 },
+    { label: "Archived", value: listingCountsByStatus.archived ?? 0 },
   ];
 
   return <main className="subpage">

@@ -8,6 +8,19 @@ export const dynamic = "force-dynamic";
 const hash = (value: string) => createHash("sha256").update(value).digest("hex");
 const genericMessage = "If a verified Linkwell account exists for that email, a sign-in link will arrive shortly.";
 
+function safeInternalPath(value: unknown): string | null {
+  if (typeof value !== "string" || value.length > 2048 || !value.startsWith("/") || value.startsWith("//") || value.includes("\\\\") || /[\\u0000-\\u001f]/.test(value)) {
+    return null;
+  }
+  try {
+    const parsed = new URL(value, "https://linkwell.invalid");
+    if (parsed.origin !== "https://linkwell.invalid") return null;
+    return parsed.pathname + parsed.search + parsed.hash;
+  } catch {
+    return null;
+  }
+}
+
 export async function POST(request: Request) {
   if (!process.env.DATABASE_URL || !process.env.BREVO_API_KEY || !process.env.LINKWELL_FROM_EMAIL || !process.env.NEXT_PUBLIC_APP_URL) {
     return NextResponse.json({ error: "Sign-in is temporarily unavailable. Please try again later." }, { status: 503 });
@@ -57,6 +70,8 @@ export async function POST(request: Request) {
 
     const link = new URL("/api/auth/verify", process.env.NEXT_PUBLIC_APP_URL);
     link.searchParams.set("token", token);
+    const next = safeInternalPath(body.next);
+    if (next) link.searchParams.set("next", next);
     const sent = await fetch("https://api.brevo.com/v3/smtp/email", {
       method: "POST",
       headers: {

@@ -23,6 +23,16 @@ export default function ProfileForm({ initialProfile }: { initialProfile: Profil
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
+  const completionItems = [
+    { label: "Professional headline", complete: Boolean(headline.trim()) },
+    { label: "About you", complete: Boolean(biography.trim()) },
+    { label: "Location", complete: Boolean(location.trim()) },
+    { label: "At least one skill", complete: skills.split(",").some(skill => skill.trim()) },
+    { label: "Portfolio or professional website", complete: Boolean(portfolioUrl.trim()) },
+  ];
+  const completedItems = completionItems.filter(item => item.complete).length;
+  const completionPercent = Math.round((completedItems / completionItems.length) * 100);
+
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setBusy(true);
@@ -45,6 +55,25 @@ export default function ProfileForm({ initialProfile }: { initialProfile: Profil
   }
 
   return <form className="auth-form profile-form" onSubmit={submit}>
+    <section className="dashboard-link-card" aria-labelledby="profile-completion-title" style={{ marginBottom: 20 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, marginBottom: 10 }}>
+        <div>
+          <h2 id="profile-completion-title" style={{ margin: 0 }}>Profile strength</h2>
+          <p style={{ margin: "4px 0 0", color: "var(--muted, #666)" }}>A complete profile helps employers understand your experience.</p>
+        </div>
+        <strong aria-live="polite">{completionPercent}%</strong>
+      </div>
+      <div role="progressbar" aria-label="Talent profile completion" aria-valuemin={0} aria-valuemax={100} aria-valuenow={completionPercent} style={{ height: 8, borderRadius: 999, overflow: "hidden", background: "var(--border, #e5e7eb)" }}>
+        <div style={{ width: completionPercent + "%", height: "100%", background: "var(--accent, #18794e)", transition: "width 180ms ease" }} />
+      </div>
+      <p style={{ margin: "10px 0 8px" }}>{completedItems} of {completionItems.length} profile sections completed</p>
+      <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: 8 }}>
+        {completionItems.map(item => <li key={item.label} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <CheckCircle2 size={16} aria-hidden="true" color={item.complete ? "var(--accent, #18794e)" : "var(--muted, #999)"} />
+          <span style={{ color: item.complete ? "inherit" : "var(--muted, #666)" }}>{item.label}</span>
+        </li>)}
+      </ul>
+    </section>
     <label className="auth-field">Professional headline
       <input value={headline} onChange={e => setHeadline(e.target.value)} maxLength={120} placeholder="e.g. Product designer | Frontend developer" />
     </label>

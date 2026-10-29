@@ -7,6 +7,19 @@ export const dynamic = "force-dynamic";
 
 const hash = (value: string) => createHash("sha256").update(value).digest("hex");
 
+function safeInternalPath(value: unknown): string | null {
+  if (typeof value !== "string" || value.length > 2048 || !value.startsWith("/") || value.startsWith("//") || value.includes("\\") || /[\u0000-\u001f]/.test(value)) {
+    return null;
+  }
+  try {
+    const parsed = new URL(value, "https://linkwell.invalid");
+    if (parsed.origin !== "https://linkwell.invalid") return null;
+    return parsed.pathname + parsed.search + parsed.hash;
+  } catch {
+    return null;
+  }
+}
+
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const token = url.searchParams.get("token") ?? "";
@@ -46,13 +59,19 @@ export async function GET(request: Request) {
          SELECT user_id, $2, now() + interval '30 days' FROM eligible
          RETURNING user_id
        )
-       SELECT s.user_id, u.role FROM session_created s JOIN users u ON u.id = s.user_id LIMIT 1`,
+       SELECT s.user_id, u.role, c.purpose
+       FROM session_created s
+       JOIN users u ON u.id = s.user_id
+       JOIN consumed c ON c.user_id = s.user_id
+       LIMIT 1`,
       [hash(token), hash(sessionToken)]
     );
     if (!rows.length) return NextResponse.redirect(new URL("/sign-in?error=invalid-link", url.origin));
 
-    const verifiedUser = rows[0] as { user_id: string; role: "talent" | "employer" | "admin" };
-    const destination = verifiedUser.role === "employer" ? "/dashboard/company" : verifiedUser.role === "admin" ? "/admin" : "/dashboard";
+    const verifiedUser = rows[0] as { user_id: string; role: "talent" | "employer" | "admin"; purpose: "verify_email" | "sign_in" };
+    const defaultDestination = verifiedUser.role === "employer" ? "/dashboard/company" : verifiedUser.role === "admin" ? "/admin" : "/dashboard";
+    const requestedNext = safeInternalPath(url.searchParams.get("next"));
+    const destination = verifiedUser.purpose === "sign_in" && requestedNext ? requestedNext : defaultDestination;
     const response = NextResponse.redirect(new URL(destination, url.origin));
     response.cookies.set("linkwell_session", sessionToken, {
       httpOnly: true, secure: url.protocol === "https:", sameSite: "lax",

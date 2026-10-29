@@ -66,7 +66,9 @@ export async function POST(request: Request) {
     const link = new URL("/api/auth/verify", process.env.NEXT_PUBLIC_APP_URL);
     link.searchParams.set("token", token);
     if (nextPath) link.searchParams.set("next", nextPath);
-    const sent = await fetch("https://api.brevo.com/v3/smtp/email", {
+    let sent: Response;
+    try {
+      sent = await fetch("https://api.brevo.com/v3/smtp/email", {
       method: "POST",
       headers: {
         "api-key": process.env.BREVO_API_KEY,
@@ -79,7 +81,11 @@ export async function POST(request: Request) {
         subject: "Your Linkwell sign-in link",
         htmlContent: '<div style="font-family:Arial,sans-serif;max-width:560px;margin:auto;color:#171a18"><h1>Sign in to Linkwell</h1><p>This secure link expires in 15 minutes and can only be used once.</p><p><a href="' + link.toString() + '" style="display:inline-block;background:#123D2B;color:white;padding:12px 18px;border-radius:8px;text-decoration:none">Sign in to Linkwell</a></p><p>If you did not request this, you can ignore this email.</p></div>'
       })
-    });
+      });
+    } catch {
+      await sql.query("DELETE FROM auth_email_tokens WHERE token_hash = $1", [tokenHash]);
+      return NextResponse.json({ error: "We could not send your sign-in email. Please try again later." }, { status: 502 });
+    }
 
     if (!sent.ok) {
       await sql.query("DELETE FROM auth_email_tokens WHERE token_hash = $1", [tokenHash]);

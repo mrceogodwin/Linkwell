@@ -41,20 +41,27 @@ export async function PATCH(request: Request) {
   }
   const id = typeof body.application_id === "string" ? body.application_id : "";
   const hasStatus = Object.prototype.hasOwnProperty.call(body, "status");
+  const hasNotes = Object.prototype.hasOwnProperty.call(body, "employer_notes");
   const status = typeof body.status === "string" ? body.status : null;
-  const notes = typeof body.employer_notes === "string" ? body.employer_notes.trim().slice(0, 2000) : "";
-  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id) || (hasStatus && (!status || !allowedStatuses.has(status)))) {
-    return NextResponse.json({ error: "Choose a valid application and status." }, { status: 400 });
+  const notes = typeof body.employer_notes === "string" ? body.employer_notes.trim().slice(0, 2000) : null;
+  if (
+    !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id) ||
+    (hasStatus && (!status || !allowedStatuses.has(status))) ||
+    (hasNotes && typeof body.employer_notes !== "string") ||
+    (!hasStatus && !hasNotes)
+  ) {
+    return NextResponse.json({ error: "Choose a valid application and provide a status or notes update." }, { status: 400 });
   }
   try {
     const rows = await getDb().query(
       `UPDATE applications a
        SET status = CASE WHEN $3::text IS NULL THEN a.status ELSE $3::application_status END,
-           employer_notes = NULLIF($4, ''), updated_at = now()
+           employer_notes = CASE WHEN $4::boolean THEN NULLIF($5::text, '') ELSE a.employer_notes END,
+           updated_at = now()
        FROM jobs j
        WHERE a.id = $1::uuid AND a.job_id = j.id AND j.employer_user_id = $2::uuid
        RETURNING a.id, a.status, a.employer_notes, a.updated_at`,
-      [id, employer.id, status, notes]
+      [id, employer.id, status, hasNotes, notes]
     );
     if (!rows.length) return NextResponse.json({ error: "Application not found for your company." }, { status: 404 });
     return NextResponse.json({ message: "Application updated.", application: rows[0] });

@@ -18,6 +18,7 @@ export async function GET() {
        FROM saved_jobs s
        JOIN jobs j ON j.id = s.job_id
        WHERE s.talent_user_id = $1::uuid AND j.status = 'published'
+         AND (j.expires_at IS NULL OR j.expires_at > now())
        ORDER BY s.created_at DESC LIMIT 200`,
       [user.id]
     );
@@ -45,12 +46,13 @@ export async function POST(request: Request) {
       `INSERT INTO saved_jobs (talent_user_id, job_id)
        SELECT $1::uuid, j.id FROM jobs j
        WHERE j.id = $2::uuid AND j.status = 'published'
+         AND (j.expires_at IS NULL OR j.expires_at > now())
        ON CONFLICT (talent_user_id, job_id) DO NOTHING
        RETURNING job_id`,
       [user.id, jobId]
     );
     if (!rows.length) {
-      const exists = await getDb().query("SELECT id FROM jobs WHERE id = $1::uuid AND status = 'published' LIMIT 1", [jobId]);
+      const exists = await getDb().query("SELECT id FROM jobs WHERE id = $1::uuid AND status = 'published' AND (expires_at IS NULL OR expires_at > now()) LIMIT 1", [jobId]);
       if (!exists.length) return NextResponse.json({ error: "Published opportunity not found." }, { status: 404 });
     }
     return NextResponse.json({ saved: true }, { status: 200 });

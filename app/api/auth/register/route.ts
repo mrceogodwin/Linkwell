@@ -66,7 +66,9 @@ export async function POST(request: Request) {
       [userId, "linkwell:" + userId, email, displayName, role, tokenHash, companyName || null]
     );
 
-    const emailResponse = await fetch("https://api.brevo.com/v3/smtp/email", {
+    let emailResponse: Response;
+    try {
+      emailResponse = await fetch("https://api.brevo.com/v3/smtp/email", {
       method: "POST",
       headers: { "api-key": process.env.BREVO_API_KEY!, "Content-Type": "application/json", Accept: "application/json" },
       body: JSON.stringify({
@@ -75,7 +77,12 @@ export async function POST(request: Request) {
         subject: "Verify your Linkwell email",
         htmlContent: '<div style="font-family:Arial,sans-serif;max-width:560px;margin:auto;color:#171a18"><h1>Welcome to Linkwell</h1><p>Confirm your email to activate your account.</p><p><a href="' + verifyUrl.toString() + '" style="display:inline-block;background:#123D2B;color:white;padding:12px 18px;border-radius:8px;text-decoration:none">Verify email</a></p><p>This link expires in 30 minutes. If you did not create this account, you can ignore this message.</p></div>'
       })
-    });
+      });
+    } catch {
+      // Network failures must not leave an account the user cannot verify.
+      await sql.query("DELETE FROM users WHERE id = $1::uuid AND email_verified_at IS NULL", [userId]);
+      return NextResponse.json({ error: "We could not send the verification email. Please try again later." }, { status: 502 });
+    }
 
     if (!emailResponse.ok) {
       // Remove the unverified account; profiles and tokens cascade with it.

@@ -57,7 +57,7 @@ export default function ApplicationList({ applications }: { applications: Applic
       <div className="dashboard-link-card"><small>In progress</small><strong style={{ display: "block", fontSize: 26, marginTop: 5 }}>{activeCount}</strong></div>
       <div className="dashboard-link-card"><small>Hired</small><strong style={{ display: "block", fontSize: 26, marginTop: 5 }}>{hiredCount}</strong></div>
     </div>
-    <section className="auth-panel" aria-label="Filter applications" style={{ display: "grid", gridTemplateColumns: "minmax(180px, 1fr) minmax(150px, .55fr) auto", gap: 12, alignItems: "center", marginBottom: 20 }}>
+    <section className="auth-panel" aria-label="Filter applications" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12, alignItems: "center", marginBottom: 20 }}>
       <label style={{ display: "flex", alignItems: "center", gap: 9, border: "1px solid var(--line, #e5e9e3)", borderRadius: 9, padding: "0 12px", minHeight: 44 }}>
         <Search size={17} aria-hidden="true"/>
         <input value={query} onChange={event => setQuery(event.target.value)} maxLength={120} placeholder="Search role, company or location" aria-label="Search applications" style={{ width: "100%", border: 0, outline: 0, background: "transparent" }}/>

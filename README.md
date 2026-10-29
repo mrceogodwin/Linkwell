@@ -4,22 +4,21 @@
 
 Linkwell is a talent marketplace being built to connect African professionals with employers around the world.
 
-## Product requirements
-
-See [docs/PRD.md](docs/PRD.md) for the product scope, roles, listing approval lifecycle, monetization, planned architecture, security requirements and launch gates.
-
 ## Current implementation status
 
-The repository contains a Next.js App Router + TypeScript public-site foundation, responsive brand styling, informational pages, a database-backed approved-opportunities API, a health endpoint, a Neon schema migration, environment-variable template, and a CI workflow intended to run TypeScript and production-build checks.
+The repository now contains a Next.js App Router + TypeScript application with public opportunity search, account registration and email verification, email-link sign-in, server-side role checks, talent profiles and public talent discovery, saved opportunities, applications and application tracking, employer listing management and applicant review, admin moderation interfaces, and CI checks for typechecking and production builds.
 
-**This is not yet a functioning marketplace.** No live vacancies or database are connected yet; signup/sign-in are not active; CV storage, application workflow, employer dashboard, administrator moderation actions, and billing integration are not implemented. The jobs API returns an unavailable response until DATABASE_URL is configured and db/schema.sql is applied. Do not treat this site as launched or collect real user data until these are implemented and tested.
+This is **not yet launch-ready**. Passing CI verifies code compilation and the production build, not live database, email, authorization, or end-to-end behavior. The live health endpoint last returned `503` with `database: not_configured`. The latest production deployment is behind GitHub main, and attempts to deploy the current commit failed with Vercel `git_info_fail`. The live application must not be treated as fully operational until the database connection, email delivery, role flows, and production deployment are verified.
+
+See [docs/IMPLEMENTATION_STATUS.md](docs/IMPLEMENTATION_STATUS.md) for audited status and launch blockers, and [docs/PRD.md](docs/PRD.md) for the intended product scope.
 
 ## Stack
 
-- Next.js 15 App Router + React 19 + TypeScript
-- Intended hosting: Vercel
-- Planned database: Neon PostgreSQL
-- Planned: one established authentication provider, private object storage for CVs, and a verified payment provider
+- Next.js App Router, React, and TypeScript
+- Vercel hosting
+- Neon PostgreSQL
+- Current account flow: database-backed email verification and sign-in links sent through Brevo
+- Planned: private object storage for CVs and attachments, and a payment provider with verified webhooks
 
 ## Local development
 
@@ -35,7 +34,7 @@ npm run typecheck
 npm run build
 ```
 
-The CI workflow installs dependencies and runs both commands on pushes and pull requests. A passing CI result must be checked in GitHub before claiming the build passes.
+The GitHub Actions workflow installs dependencies and runs both checks on pushes and pull requests. Check the relevant GitHub Actions run before claiming a build passes.
 
 ## Brand
 

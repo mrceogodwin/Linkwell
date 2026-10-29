@@ -17,10 +17,12 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
       `SELECT id, title, company_name AS company, description, requirements, category,
               listing_type, work_arrangement, location, salary_min, salary_max,
               salary_currency, salary_period, application_url, published_at
-       FROM jobs
-       WHERE id = $1::uuid
-         AND status = 'published'
-         AND (expires_at IS NULL OR expires_at > now())
+       FROM jobs j
+       JOIN employer_profiles ep ON ep.user_id = j.employer_user_id AND ep.verified_at IS NOT NULL
+       JOIN users eu ON eu.id = ep.user_id AND eu.email_verified_at IS NOT NULL AND eu.disabled_at IS NULL
+       WHERE j.id = $1::uuid
+         AND j.status = 'published'
+         AND (j.expires_at IS NULL OR j.expires_at > now())
        LIMIT 1`,
       [id]
     );

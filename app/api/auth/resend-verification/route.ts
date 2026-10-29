@@ -51,7 +51,9 @@ export async function POST(request: Request) {
 
     const link = new URL("/api/auth/verify", process.env.NEXT_PUBLIC_APP_URL);
     link.searchParams.set("token", token);
-    const sent = await fetch("https://api.brevo.com/v3/smtp/email", {
+    let sent: Response;
+    try {
+      sent = await fetch("https://api.brevo.com/v3/smtp/email", {
       method: "POST",
       headers: {
         "api-key": process.env.BREVO_API_KEY,
@@ -64,7 +66,11 @@ export async function POST(request: Request) {
         subject: "Verify your Linkwell email",
         htmlContent: '<div style="font-family:Arial,sans-serif;max-width:560px;margin:auto;color:#171a18"><h1>Verify your Linkwell email</h1><p>Confirm your email to activate your account.</p><p><a href="' + link.toString() + '" style="display:inline-block;background:#123D2B;color:white;padding:12px 18px;border-radius:8px;text-decoration:none">Verify email</a></p><p>This link expires in 30 minutes. If you did not create this account, you can ignore this message.</p></div>'
       })
-    });
+      });
+    } catch {
+      await sql.query("DELETE FROM auth_email_tokens WHERE token_hash = $1", [tokenHash]);
+      return NextResponse.json({ error: "We could not send your verification email. Please try again later." }, { status: 502 });
+    }
 
     if (!sent.ok) {
       await sql.query("DELETE FROM auth_email_tokens WHERE token_hash = $1", [tokenHash]);

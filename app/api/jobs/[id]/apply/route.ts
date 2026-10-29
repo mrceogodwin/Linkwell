@@ -28,6 +28,8 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
       `INSERT INTO applications (job_id, talent_user_id, cover_letter)
        SELECT j.id, $2::uuid, NULLIF($3::text, '')
        FROM jobs j
+       JOIN employer_profiles ep ON ep.user_id = j.employer_user_id AND ep.verified_at IS NOT NULL
+       JOIN users eu ON eu.id = ep.user_id AND eu.email_verified_at IS NOT NULL AND eu.disabled_at IS NULL
        WHERE j.id = $1::uuid AND j.status = 'published'
          AND (j.expires_at IS NULL OR j.expires_at > now())
        ON CONFLICT (job_id, talent_user_id) DO NOTHING
@@ -36,7 +38,7 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     );
     if (rows.length) return NextResponse.json({ message: "Your application has been submitted.", application: rows[0] }, { status: 201 });
 
-    const job = await sql.query("SELECT id FROM jobs WHERE id = $1::uuid AND status = 'published' AND (expires_at IS NULL OR expires_at > now()) LIMIT 1", [id]);
+    const job = await sql.query("SELECT j.id FROM jobs j JOIN employer_profiles ep ON ep.user_id = j.employer_user_id AND ep.verified_at IS NOT NULL JOIN users eu ON eu.id = ep.user_id AND eu.email_verified_at IS NOT NULL AND eu.disabled_at IS NULL WHERE j.id = $1::uuid AND j.status = 'published' AND (j.expires_at IS NULL OR j.expires_at > now()) LIMIT 1", [id]);
     if (!job.length) return NextResponse.json({ error: "This opportunity is no longer available." }, { status: 404 });
     const existing = await sql.query("SELECT id, status, created_at FROM applications WHERE job_id = $1::uuid AND talent_user_id = $2::uuid LIMIT 1", [id, talent.id]);
     if (existing.length) return NextResponse.json({ error: "You have already applied to this opportunity.", application: existing[0] }, { status: 409 });

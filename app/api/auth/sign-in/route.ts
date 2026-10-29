@@ -9,7 +9,7 @@ const hash = (value: string) => createHash("sha256").update(value).digest("hex")
 const genericMessage = "If a verified Linkwell account exists for that email, a sign-in link will arrive shortly.";
 
 function safeInternalPath(value: unknown): string | null {
-  if (typeof value !== "string" || value.length > 2048 || !value.startsWith("/") || value.startsWith("//") || value.includes("\\\\") || /[\\u0000-\\u001f]/.test(value)) {
+  if (typeof value !== "string" || value.length > 2048 || !value.startsWith("/") || value.startsWith("//") || value.includes("\\") || /[\u0000-\u001f]/.test(value)) {
     return null;
   }
   try {

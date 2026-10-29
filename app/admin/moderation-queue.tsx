@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Check, LoaderCircle, X } from "lucide-react";
 
 type PendingJob = { id: string; title: string; company_name: string; category: string; listing_type: string; work_arrangement: string; location: string | null; description: string; submitted_at: string | null };
@@ -10,6 +10,8 @@ export default function ModerationQueue({ jobs }: { jobs: PendingJob[] }) {
   const [reasons, setReasons] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState<string | null>(null);
   const [message, setMessage] = useState("");
+  const [search, setSearch] = useState("");
+  const [typeFilter, setTypeFilter] = useState("all");
 
   async function review(job: PendingJob, decision: "approve" | "reject") {
     if (decision === "reject" && (reasons[job.id] ?? "").trim().length < 5) {
@@ -35,11 +37,35 @@ export default function ModerationQueue({ jobs }: { jobs: PendingJob[] }) {
     }
   }
 
+  const filteredItems = useMemo(() => {
+    const query = search.trim().toLocaleLowerCase();
+    return items.filter((job) => {
+      const matchesQuery = !query || [job.title, job.company_name, job.category, job.location ?? ""]
+        .some((value) => value.toLocaleLowerCase().includes(query));
+      const matchesType = typeFilter === "all" || job.listing_type === typeFilter;
+      return matchesQuery && matchesType;
+    });
+  }, [items, search, typeFilter]);
+
   if (!items.length) return <div className="moderation-empty"><Check size={20}/><h2>Queue clear</h2><p>There are no listings awaiting review right now.</p>{message && <p role="status">{message}</p>}</div>;
 
   return <div className="moderation-list">
     {message && <p className="moderation-message" role="status">{message}</p>}
-    {items.map((job) => <article className="moderation-card" key={job.id}>
+    <section aria-label="Filter moderation queue" style={{display:"grid",gridTemplateColumns:"minmax(0,1fr) minmax(160px,220px)",gap:12,marginBottom:18}}>
+      <label className="moderation-label">Search listings
+        <input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Title, company, category or location" style={{display:"block",width:"100%",marginTop:6}}/>
+      </label>
+      <label className="moderation-label">Listing type
+        <select value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)} style={{display:"block",width:"100%",marginTop:6}}>
+          <option value="all">All types ({items.length})</option>
+          <option value="full_time">Full-time</option>
+          <option value="part_time">Part-time</option>
+          <option value="freelance">Freelance</option>
+          <option value="contract">Contract</option>
+        </select>
+      </label>
+    </section>
+    {filteredItems.length === 0 ? <div className="moderation-empty"><h2>No matching listings</h2><p>Change your search or listing type to see more results.</p><button type="button" className="button button-light" onClick={() => {setSearch("");setTypeFilter("all");}}>Clear filters</button></div> : filteredItems.map((job) => <article className="moderation-card" key={job.id}>
       <div className="moderation-card-head"><span className="eyebrow"><span/> AWAITING REVIEW</span><small>{job.submitted_at ? new Date(job.submitted_at).toLocaleDateString() : "Submission date unavailable"}</small></div>
       <h2>{job.title}</h2><h3>{job.company_name}</h3>
       <div className="job-detail-tags"><span>{job.listing_type.replace("_", "-")}</span><span>{job.work_arrangement.replace("_", "-")}</span><span>{job.category}</span>{job.location && <span>{job.location}</span>}</div>

@@ -43,7 +43,7 @@ export default function ApplicantsList() {
     return () => { active = false; };
   }, []);
 
-  async function update(item: Application, status: string) {
+  async function update(item: Application, status?: string) {
     setBusyId(item.id);
     setError("");
     setSavedId("");
@@ -51,7 +51,7 @@ export default function ApplicantsList() {
       const response = await fetch("/api/employer/applications", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ application_id: item.id, status, employer_notes: notes[item.id] ?? item.employer_notes ?? "" }),
+        body: JSON.stringify({ application_id: item.id, ...(status ? { status } : {}), employer_notes: notes[item.id] ?? item.employer_notes ?? "" }),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Could not update application.");
@@ -105,9 +105,12 @@ export default function ApplicantsList() {
         <small>Applied {new Date(item.created_at).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"})}</small>
         {item.cover_letter && <div className="application-cover-letter"><strong>Cover letter</strong><p>{item.cover_letter}</p></div>}
         <label className="auth-field" style={{marginTop:12}}>Internal note
-          <textarea rows={2} maxLength={2000} value={notes[item.id] ?? item.employer_notes ?? ""} onChange={e => setNotes(current => ({...current,[item.id]:e.target.value}))} placeholder="Private notes for your hiring team"/>
+          <textarea rows={2} maxLength={2000} value={notes[item.id] ?? item.employer_notes ?? ""} onChange={e => { setNotes(current => ({...current,[item.id]:e.target.value})); setSavedId(""); }} placeholder="Private notes for your hiring team"/>
         </label>
-        {savedId === item.id && <p className="auth-feedback auth-success"><CheckCircle2 size={15}/> Updated</p>}
+        <div className="applicant-note-actions">
+          <button className="button button-light button-small" type="button" onClick={() => void update(item)} disabled={busyId === item.id}>{busyId === item.id ? <LoaderCircle size={13}/> : null} Save note</button>
+          {savedId === item.id && <span className="auth-feedback auth-success" role="status"><CheckCircle2 size={15}/> Saved</span>}
+        </div>
       </div>
       <div className="applicant-controls">
         <span className={"application-status status-"+item.status}>{labels[item.status] ?? item.status}</span>

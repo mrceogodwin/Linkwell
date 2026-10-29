@@ -28,9 +28,9 @@ export async function GET(request: NextRequest) {
   try {
     const sql = getDb();
     const statement = [
-      "SELECT id, title, company_name AS company, description, category,",
-      "listing_type, work_arrangement, location, salary_min, salary_max,",
-      "salary_currency, salary_period, published_at",
+      "SELECT j.id, j.title, j.company_name AS company, j.description, j.category,",
+      "j.listing_type, j.work_arrangement, j.location, j.salary_min, j.salary_max,",
+      "j.salary_currency, j.salary_period, j.published_at",
       "FROM jobs j",
       "JOIN employer_profiles ep ON ep.user_id = j.employer_user_id AND ep.verified_at IS NOT NULL",
       "JOIN users eu ON eu.id = ep.user_id AND eu.email_verified_at IS NOT NULL AND eu.disabled_at IS NULL",

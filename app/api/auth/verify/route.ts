@@ -20,9 +20,11 @@ function safeInternalPath(value: string | null) {
 function allowedForRole(path: string, role: "talent" | "employer" | "admin") {
   const pathname = path.split(/[?#]/, 1)[0];
   const matches = (base: string) => pathname === base || pathname.startsWith(base + "/");
-  if (role === "admin") return matches("/admin") || matches("/dashboard");
+  if (role === "admin") return matches("/admin") || pathname === "/dashboard";
   if (role === "employer") return matches("/dashboard/company") || matches("/jobs");
-  return matches("/dashboard") || matches("/jobs");
+  // Do not treat /dashboard/company as a talent dashboard just because it
+  // shares the /dashboard prefix. The destination must match the user's role.
+  return (pathname === "/dashboard" || (matches("/dashboard") && !matches("/dashboard/company"))) || matches("/jobs");
 }
 
 export async function GET(request: Request) {

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { ArrowRight, LoaderCircle, Mail } from "lucide-react";
 
-export default function SigninForm() {
+export default function SigninForm({ next = "" }: { next?: string }) {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -19,7 +19,7 @@ export default function SigninForm() {
       const response = await fetch("/api/auth/sign-in", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, next }),
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Could not request a sign-in link.");

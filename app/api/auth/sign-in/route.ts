@@ -57,10 +57,7 @@ export async function POST(request: Request) {
 
     const token = randomBytes(32).toString("base64url");
     const tokenHash = hash(token);
-    await sql.query(
-      "DELETE FROM auth_email_tokens WHERE user_id = $1::uuid AND purpose = 'sign_in'",
-      [user.id]
-    );
+    // Keep any existing sign-in link valid until the replacement email is confirmed sent.
     await sql.query(
       "INSERT INTO auth_email_tokens (user_id, token_hash, purpose, expires_at) VALUES ($1::uuid, $2, 'sign_in', now() + interval '15 minutes')",
       [user.id, tokenHash]
@@ -88,6 +85,12 @@ export async function POST(request: Request) {
       await sql.query("DELETE FROM auth_email_tokens WHERE token_hash = $1", [tokenHash]);
       return NextResponse.json({ error: "We could not send your sign-in email. Please try again later." }, { status: 502 });
     }
+
+    // Retire older links only after the replacement email was accepted by the provider.
+    await sql.query(
+      "DELETE FROM auth_email_tokens WHERE user_id = $1::uuid AND purpose = 'sign_in' AND token_hash <> $2",
+      [user.id, tokenHash]
+    );
 
     return NextResponse.json({ message: genericMessage });
   } catch {

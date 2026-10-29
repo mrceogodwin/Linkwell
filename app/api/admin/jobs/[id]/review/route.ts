@@ -45,6 +45,18 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
              review_reason = CASE WHEN $2::text = 'reject' THEN $4::text ELSE NULL END,
              updated_at = now()
          WHERE id = $1::uuid AND status = 'pending_review'
+           AND (
+             $2::text <> 'approve'
+             OR EXISTS (
+               SELECT 1
+               FROM employer_profiles ep
+               JOIN users eu ON eu.id = ep.user_id
+               WHERE ep.user_id = jobs.employer_user_id
+                 AND ep.verified_at IS NOT NULL
+                 AND eu.email_verified_at IS NOT NULL
+                 AND eu.disabled_at IS NULL
+             )
+           )
          RETURNING id, title, company_name, status, reviewed_at
        ),
        logged AS (

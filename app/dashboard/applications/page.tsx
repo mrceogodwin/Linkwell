@@ -30,7 +30,7 @@ export default async function ApplicationsPage() {
       <a className="back-link" href="/dashboard"><ArrowLeft size={15}/> Back to workspace</a>
       <div className="eyebrow"><span/> YOUR PROGRESS</div><h1>Your applications</h1>
       <p className="dashboard-intro">Keep track of the opportunities you’ve applied for and their latest status.</p>
-      {unavailable ? <div className="empty-state"><h3>Applications are temporarily unavailable.</h3><p>Please try again shortly.</p></div> : applications.length === 0 ? <div className="empty-state"><div className="empty-icon"><span aria-hidden="true">↗</span></div><h3>Your next opportunity starts here.</h3><p>When you apply for a job through Linkwell, you’ll see its status here.</p><a className="button button-dark" href="/jobs">Explore opportunities</a></div> : <ApplicationList applications={applications}/>
+      {unavailable ? <div className="empty-state"><h3>Applications are temporarily unavailable.</h3><p>Please try again shortly.</p></div> : applications.length === 0 ? <div className="empty-state"><div className="empty-icon"><span aria-hidden="true">↗</span></div><h3>Your next opportunity starts here.</h3><p>When you apply for a job through Linkwell, you’ll see its status here.</p><a className="button button-dark" href="/jobs">Explore opportunities</a></div> : <ApplicationList applications={applications}/>}
     </section>
   </main>;
 }

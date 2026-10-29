@@ -31,6 +31,14 @@ export default async function CompanyDashboardPage() {
     unavailable = true;
   }
 
+  const listingCounts = [
+    { label: "Published", value: jobs.filter(job => job.status === "published").length },
+    { label: "Awaiting review", value: jobs.filter(job => job.status === "pending_review").length },
+    { label: "Changes requested", value: jobs.filter(job => job.status === "rejected").length },
+    { label: "Drafts", value: jobs.filter(job => job.status === "draft").length },
+    { label: "Archived", value: jobs.filter(job => job.status === "archived").length },
+  ];
+
   return <main className="subpage">
     <header className="nav wrap"><a className="brand" href="/"><span className="brand-mark"><i/><i/><i/><i/></span><span>linkwell</span></a><nav className="nav-actions"><a className="sign-in" href="/dashboard">Workspace</a><a className="button button-light button-small" href="/dashboard/company/applicants">Applicants</a><span className="admin-pill"><Building2 size={15}/> Employer</span><form action="/api/auth/logout" method="post"><button className="button button-dark button-small" type="submit">Sign out</button></form></nav></header>
     <section className="wrap admin-shell employer-shell">
@@ -39,6 +47,12 @@ export default async function CompanyDashboardPage() {
       <p className="admin-intro">Create a clear opportunity and keep track of its review status and applications.</p>
       <div className="dashboard-notice"><ShieldCheck size={18}/><span>Only verified employer profiles can submit listings. Every new listing starts in review and cannot publish itself.</span></div>
       <div style={{display:"flex",gap:10,flexWrap:"wrap",marginTop:24}}><a className="button button-dark" href="/dashboard/company/applicants"><Users size={16}/> Review applicants</a></div>
+      {!unavailable && <section aria-label="Listing status summary" style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(145px,1fr))",gap:12,marginTop:24}}>
+        {listingCounts.map(item => <article key={item.label} style={{border:"1px solid var(--line, #e5e7e5)",borderRadius:14,padding:"16px 18px",background:"var(--surface, #fff)"}}>
+          <p style={{margin:0,fontSize:13,color:"var(--muted, #66706a)"}}>{item.label}</p>
+          <strong style={{display:"block",fontSize:28,lineHeight:1.2,marginTop:8}}>{item.value}</strong>
+        </article>)}
+      </section>}
       <section style={{marginTop:30}}>
         <div className="section-heading"><div><div className="eyebrow">YOUR OPPORTUNITIES</div><h2 style={{fontSize:28}}>Listing overview</h2></div><span className="admin-pill"><BriefcaseBusiness size={15}/> {jobs.length} listings</span></div>
         {unavailable ? <div className="empty-state"><h3>Listings are temporarily unavailable.</h3><p>Try again shortly.</p></div> : jobs.length === 0 ? <div className="empty-state"><div className="empty-icon"><BriefcaseBusiness size={24}/></div><h3>Your first listing starts here.</h3><p>Submit a clear role description below. It will appear publicly only after an administrator approves it.</p></div> : <div className="application-list">{jobs.map(job=><article className="application-row" key={job.id}><div className="job-card-icon"><BriefcaseBusiness size={20}/></div><div className="application-main"><h2>{job.title}</h2><p>{job.category} · {job.listing_type.replaceAll("_"," ")} · {job.work_arrangement.replaceAll("_"," ")}</p><small><Clock3 size={13}/> Updated {new Date(job.created_at).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"})}</small>{job.review_reason && <p className="auth-feedback auth-error">Review note: {job.review_reason}</p>}</div><div style={{display:"grid",gap:8,justifyItems:"end"}}><span className={"application-status status-"+job.status}>{statusLabels[job.status] ?? job.status}</span><span className="dashboard-card-link"><Users size={14}/> {job.applicant_count} applicants</span>{job.status==="published" && <a className="text-link" href={"/jobs/"+job.id}>View live listing ↗</a>}</div></article>)}</div>}

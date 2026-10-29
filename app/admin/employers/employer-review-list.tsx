@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Building2, CheckCircle2, LoaderCircle, ShieldCheck, ShieldOff } from "lucide-react";
 
 type Employer = {
@@ -24,6 +24,8 @@ export default function EmployerReviewList() {
   const [reason, setReason] = useState<Record<string,string>>({});
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [search, setSearch] = useState("");
+  const [verificationFilter, setVerificationFilter] = useState("all");
 
   async function load() {
     try {
@@ -61,11 +63,35 @@ export default function EmployerReviewList() {
     }
   }
 
+  const filteredItems = useMemo(() => {
+    const query = search.trim().toLocaleLowerCase();
+    return items.filter((item) => {
+      const matchesSearch = !query || [item.company_name, item.display_name, item.email, item.location ?? ""]
+        .some((value) => value.toLocaleLowerCase().includes(query));
+      const matchesVerification = verificationFilter === "all"
+        || (verificationFilter === "verified" && !!item.verified_at)
+        || (verificationFilter === "pending" && !item.verified_at);
+      return matchesSearch && matchesVerification;
+    });
+  }, [items, search, verificationFilter]);
+
   if (loading) return <div className="empty-state"><LoaderCircle size={20}/> Loading employer accounts…</div>;
   return <div className="employer-review-list">
     {error && <p className="auth-feedback auth-error" role="alert">{error}</p>}
     {notice && <p className="auth-feedback auth-success" role="status"><CheckCircle2 size={16}/>{notice}</p>}
-    {items.length === 0 ? <div className="empty-state"><div className="empty-icon"><Building2 size={24}/></div><h3>No employer accounts yet.</h3><p>Employer accounts will appear here after someone signs up and verifies their email.</p></div> : items.map(item => <article className="application-row employer-review-row" key={item.user_id}>
+    {items.length > 0 && <section aria-label="Filter employer accounts" style={{display:"grid",gridTemplateColumns:"minmax(0,1fr) minmax(170px,220px)",gap:12,marginBottom:18}}>
+      <label className="auth-field">Search employers
+        <input type="search" value={search} onChange={event => setSearch(event.target.value)} placeholder="Company, contact, email or location" />
+      </label>
+      <label className="auth-field">Verification status
+        <select value={verificationFilter} onChange={event => setVerificationFilter(event.target.value)}>
+          <option value="all">All accounts ({items.length})</option>
+          <option value="pending">Awaiting verification</option>
+          <option value="verified">Verified employers</option>
+        </select>
+      </label>
+    </section>}
+    {items.length === 0 ? <div className="empty-state"><div className="empty-icon"><Building2 size={24}/></div><h3>No employer accounts yet.</h3><p>Employer accounts will appear here after someone signs up and verifies their email.</p></div> : filteredItems.length === 0 ? <div className="empty-state"><h3>No matching employers.</h3><p>Try a different search or verification status.</p><button type="button" className="button button-light button-small" onClick={() => {setSearch("");setVerificationFilter("all");}}>Clear filters</button></div> : filteredItems.map(item => <article className="application-row employer-review-row" key={item.user_id}>
       <div className="job-card-icon"><Building2 size={20}/></div>
       <div className="application-main">
         <h2>{item.company_name}</h2>

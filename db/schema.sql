@@ -44,7 +44,7 @@ CREATE TABLE IF NOT EXISTS talent_profiles (
   skills text[] NOT NULL DEFAULT '{}',
   portfolio_url text,
   cv_object_key text,
-  profile_visibility boolean NOT NULL DEFAULT true,
+  profile_visibility boolean NOT NULL DEFAULT false,
   updated_at timestamptz NOT NULL DEFAULT now()
 );
 

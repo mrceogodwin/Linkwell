@@ -45,6 +45,12 @@ export async function POST(request: Request) {
        SELECT j.id, $2::uuid, NULLIF($3, '')
        FROM jobs j
        WHERE j.id = $1::uuid AND j.status = 'published'
+         AND EXISTS (
+           SELECT 1 FROM employer_profiles ep
+           JOIN users eu ON eu.id = ep.user_id
+           WHERE ep.user_id = j.employer_user_id AND ep.verified_at IS NOT NULL
+             AND eu.email_verified_at IS NOT NULL AND eu.disabled_at IS NULL
+         )
          AND (j.expires_at IS NULL OR j.expires_at > now())
        ON CONFLICT (job_id, talent_user_id) DO NOTHING
        RETURNING id, job_id, status, created_at`,

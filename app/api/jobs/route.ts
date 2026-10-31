@@ -28,17 +28,19 @@ export async function GET(request: NextRequest) {
   try {
     const sql = getDb();
     const statement = [
-      "SELECT id, title, company_name AS company, description, category,",
-      "listing_type, work_arrangement, location, salary_min, salary_max,",
-      "salary_currency, salary_period, published_at",
-      "FROM jobs",
-      "WHERE status = 'published'",
-      "AND (expires_at IS NULL OR expires_at > now())",
-      "AND ($1::text IS NULL OR title ILIKE '%' || $1 || '%' OR company_name ILIKE '%' || $1 || '%' OR description ILIKE '%' || $1 || '%' OR category ILIKE '%' || $1 || '%')",
-      "AND ($2::listing_type IS NULL OR listing_type = $2::listing_type)",
-      "AND ($3::work_arrangement IS NULL OR work_arrangement = $3::work_arrangement)",
-      "AND ($4::text IS NULL OR category ILIKE '%' || $4 || '%')",
-      "ORDER BY published_at DESC NULLS LAST, created_at DESC LIMIT 50"
+      "SELECT j.id, j.title, j.company_name AS company, j.description, j.category,",
+      "j.listing_type, j.work_arrangement, j.location, j.salary_min, j.salary_max,",
+      "j.salary_currency, j.salary_period, j.published_at",
+      "FROM jobs j",
+      "JOIN employer_profiles ep ON ep.user_id = j.employer_user_id AND ep.verified_at IS NOT NULL",
+      "JOIN users eu ON eu.id = ep.user_id AND eu.email_verified_at IS NOT NULL AND eu.disabled_at IS NULL",
+      "WHERE j.status = 'published'",
+      "AND (j.expires_at IS NULL OR j.expires_at > now())",
+      "AND ($1::text IS NULL OR j.title ILIKE '%' || $1 || '%' OR j.company_name ILIKE '%' || $1 || '%' OR j.description ILIKE '%' || $1 || '%' OR j.category ILIKE '%' || $1 || '%')",
+      "AND ($2::listing_type IS NULL OR j.listing_type = $2::listing_type)",
+      "AND ($3::work_arrangement IS NULL OR j.work_arrangement = $3::work_arrangement)",
+      "AND ($4::text IS NULL OR j.category ILIKE '%' || $4 || '%')",
+      "ORDER BY j.published_at DESC NULLS LAST, j.created_at DESC LIMIT 50"
     ].join(" ");
     const rows = await sql.query(statement, [q, type, work, category]);
     return NextResponse.json({ jobs: rows });

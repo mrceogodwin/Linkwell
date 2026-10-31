@@ -35,5 +35,21 @@ export async function getCurrentUser(): Promise<LinkwellUser | null> {
 export async function requireRole(roles: LinkwellUser["role"][]) {
   const user = await getCurrentUser();
   if (!user || !user.email_verified_at || !roles.includes(user.role)) return null;
+
+  // Employer authorization must also depend on the company's current
+  // verification state. This protects every employer API route, including
+  // applicant data endpoints, when verification is revoked after sign-in.
+  if (user.role === "employer") {
+    try {
+      const rows = await getDb().query(
+        "SELECT 1 FROM employer_profiles WHERE user_id = $1::uuid AND verified_at IS NOT NULL LIMIT 1",
+        [user.id]
+      );
+      if (!rows.length) return null;
+    } catch {
+      return null;
+    }
+  }
+
   return user;
 }

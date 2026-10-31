@@ -17,6 +17,8 @@ export async function GET() {
               j.title AS job_title
        FROM applications a
        JOIN jobs j ON j.id = a.job_id
+       JOIN employer_profiles ep ON ep.user_id = j.employer_user_id AND ep.verified_at IS NOT NULL
+       JOIN users eu ON eu.id = ep.user_id AND eu.email_verified_at IS NOT NULL AND eu.disabled_at IS NULL
        JOIN users u ON u.id = a.talent_user_id
        WHERE j.employer_user_id = $1::uuid
        ORDER BY a.created_at DESC LIMIT 300`,
@@ -59,6 +61,8 @@ export async function PATCH(request: Request) {
            employer_notes = CASE WHEN $4::boolean THEN NULLIF($5::text, '') ELSE a.employer_notes END,
            updated_at = now()
        FROM jobs j
+       JOIN employer_profiles ep ON ep.user_id = j.employer_user_id AND ep.verified_at IS NOT NULL
+       JOIN users eu ON eu.id = ep.user_id AND eu.email_verified_at IS NOT NULL AND eu.disabled_at IS NULL
        WHERE a.id = $1::uuid AND a.job_id = j.id AND j.employer_user_id = $2::uuid
        RETURNING a.id, a.status, a.employer_notes, a.updated_at`,
       [id, employer.id, status, hasNotes, notes]

@@ -17,7 +17,7 @@ export default async function TalentProfilePage() {
     location: null as string | null,
     skills: [] as string[],
     portfolio_url: null as string | null,
-    profile_visibility: true,
+    profile_visibility: false,
   };
   try {
     const rows = await getDb().query(

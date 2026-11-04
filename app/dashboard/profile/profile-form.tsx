@@ -22,6 +22,9 @@ export default function ProfileForm({ initialProfile }: { initialProfile: Profil
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [cvBusy, setCvBusy] = useState(false);
+  const [cvMessage, setCvMessage] = useState("");
+  const [cvError, setCvError] = useState("");
 
   const completionItems = [
     { label: "Professional headline", complete: Boolean(headline.trim()) },
@@ -32,6 +35,41 @@ export default function ProfileForm({ initialProfile }: { initialProfile: Profil
   ];
   const completedItems = completionItems.filter(item => item.complete).length;
   const completionPercent = Math.round((completedItems / completionItems.length) * 100);
+
+  async function uploadCv(file: File) {
+    setCvBusy(true); setCvMessage(""); setCvError("");
+    try {
+      const start = await fetch("/api/talent/cv", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content_type: file.type, size: file.size }),
+      });
+      const upload = await start.json();
+      if (!start.ok) throw new Error(upload.error || "Could not start CV upload.");
+      const sent = await fetch(upload.upload_url, { method: "PUT", headers: { "Content-Type": file.type }, body: file });
+      if (!sent.ok) throw new Error("The file could not be uploaded to private storage.");
+      const finish = await fetch("/api/talent/cv", {
+        method: "PATCH", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ object_key: upload.object_key }),
+      });
+      const result = await finish.json();
+      if (!finish.ok) throw new Error(result.error || "Could not verify your CV.");
+      setCvMessage("Your CV is stored privately and ready to use with applications.");
+    } catch (cause) {
+      setCvError(cause instanceof Error ? cause.message : "CV upload failed. Please try again.");
+    } finally { setCvBusy(false); }
+  }
+
+  async function downloadCv() {
+    setCvError(""); setCvMessage("");
+    try {
+      const response = await fetch("/api/talent/cv");
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "No CV is available.");
+      window.location.assign(result.download_url);
+    } catch (cause) {
+      setCvError(cause instanceof Error ? cause.message : "Could not download your CV.");
+    }
+  }
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -92,6 +130,19 @@ export default function ProfileForm({ initialProfile }: { initialProfile: Profil
       <input type="checkbox" checked={profileVisibility} onChange={e => setProfileVisibility(e.target.checked)} style={{width:18,height:18,marginTop:4}} />
       <span><strong>Make my talent profile discoverable</strong><br/><small>When enabled, your profile can be shown in talent discovery. Turn this off to hide it from public discovery.</small></span>
     </label>
+    <section className="dashboard-link-card" style={{ marginBottom: 20 }}>
+      <h2 style={{ marginTop: 0 }}>Your CV</h2>
+      <p>Upload a PDF, DOC or DOCX file (maximum 10 MB). Your CV is private and is only shared with employers when you apply for their opportunity.</p>
+      <label className="auth-field">Upload CV
+        <input type="file" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" disabled={cvBusy} onChange={e => { const file = e.target.files?.[0]; if (file) void uploadCv(file); e.currentTarget.value = ""; }} />
+      </label>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+        <button className="button button-dark button-small" type="button" disabled={cvBusy} onClick={() => void downloadCv()}>Download my CV</button>
+        {cvBusy && <span role="status">Uploading and verifying…</span>}
+      </div>
+      {cvError && <p className="auth-feedback auth-error" role="alert">{cvError}</p>}
+      {cvMessage && <p className="auth-feedback auth-success" role="status">{cvMessage}</p>}
+    </section>
     <label className="auth-field">Portfolio or professional website
       <input value={portfolioUrl} onChange={e => setPortfolioUrl(e.target.value)} type="url" placeholder="https://yourportfolio.com" />
       <small>Use a secure HTTPS link.</small>

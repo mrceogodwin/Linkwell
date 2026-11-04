@@ -41,9 +41,10 @@ export async function POST(request: Request) {
   if (!uuidPattern.test(jobId)) return NextResponse.json({ error: "A valid opportunity is required." }, { status: 400 });
   try {
     const rows = await getDb().query(
-      `INSERT INTO applications (job_id, talent_user_id, cover_letter)
-       SELECT j.id, $2::uuid, NULLIF($3, '')
+      `INSERT INTO applications (job_id, talent_user_id, cover_letter, cv_object_key)
+       SELECT j.id, $2::uuid, NULLIF($3, ''), tp.cv_object_key
        FROM jobs j
+       JOIN talent_profiles tp ON tp.user_id = $2::uuid
        WHERE j.id = $1::uuid AND j.status = 'published'
          AND EXISTS (
            SELECT 1 FROM employer_profiles ep

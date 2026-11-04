@@ -29,6 +29,7 @@ export default function ApplicantsList() {
   const [savedId, setSavedId] = useState("");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [cvBusyId, setCvBusyId] = useState("");
 
   useEffect(() => {
     let active = true;
@@ -42,6 +43,18 @@ export default function ApplicantsList() {
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, []);
+
+  async function downloadApplicantCv(item: Application) {
+    setCvBusyId(item.id); setError("");
+    try {
+      const response = await fetch(`/api/employer/applications/${item.id}/cv`, { cache: "no-store" });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Could not access applicant CV.");
+      window.location.assign(data.download_url);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not download applicant CV.");
+    } finally { setCvBusyId(""); }
+  }
 
   async function update(item: Application, status?: string) {
     setBusyId(item.id);
@@ -103,6 +116,11 @@ export default function ApplicantsList() {
         <h2>{item.applicant_name}</h2>
         <p><a href={"mailto:"+item.applicant_email}>{item.applicant_email}</a> · <a href={"/jobs/"+item.job_id}>{item.job_title}</a></p>
         <small>Applied {new Date(item.created_at).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"})}</small>
+        <div style={{ marginTop: 10 }}>
+          <button className="button button-light button-small" type="button" disabled={cvBusyId === item.id} onClick={() => void downloadApplicantCv(item)}>
+            {cvBusyId === item.id ? <LoaderCircle size={13}/> : null} Download applicant CV
+          </button>
+        </div>
         {item.cover_letter && <div className="application-cover-letter"><strong>Cover letter</strong><p>{item.cover_letter}</p></div>}
         <label className="auth-field" style={{marginTop:12}}>Internal note
           <textarea rows={2} maxLength={2000} value={notes[item.id] ?? item.employer_notes ?? ""} onChange={e => { setNotes(current => ({...current,[item.id]:e.target.value})); setSavedId(""); }} placeholder="Private notes for your hiring team"/>
